@@ -1,6 +1,6 @@
 import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
-import { getCampaign, getPostsForCampaign, getUser } from '@/lib/queries'
+import { getCampaign, getCampaignAssets, getPostsForCampaign, getUser } from '@/lib/queries'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -15,6 +15,7 @@ import { ChevronLeft, Plus, FileText } from 'lucide-react'
 import { NuevoPostDialog } from './nuevo-post-dialog'
 import { PostCard } from './post-card'
 import { CampanaEstadoSelect } from './campana-estado-select'
+import { MaterialSection } from './material-section'
 import type { Campaign } from '@/lib/types'
 
 const ESTADO_BADGE: Record<Campaign['estado'], string> = {
@@ -41,6 +42,7 @@ export default async function CampanaDetailPage({
   if (!campaign) notFound()
 
   const posts = await getPostsForCampaign(id)
+  const assets = await getCampaignAssets(id)
 
   const borradores = posts.filter((p) => p.estado === 'borrador')
   const aprobados = posts.filter((p) => p.estado === 'aprobado')
@@ -90,6 +92,9 @@ export default async function CampanaDetailPage({
           <CardContent className="text-sm leading-relaxed">{campaign.brief}</CardContent>
         </Card>
       )}
+
+      {/* Material de la campaña */}
+      <MaterialSection campaignId={campaign.id} userId={user.id} initialAssets={assets} />
 
       {/* Empty state */}
       {posts.length === 0 && (

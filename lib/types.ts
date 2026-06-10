@@ -6,6 +6,15 @@ export interface Business {
   nombre: string
   descripcion: string | null
   tono_marca: string | null
+  tono_detalle: string | null
+  rubro: string | null
+  propuesta_valor: string | null
+  publico_objetivo: string | null
+  estetica_visual: string | null
+  ejemplos_posts: string | null
+  evitar: string | null
+  sitio_web: string | null
+  instagram: string | null
   created_at: string
 }
 
@@ -15,6 +24,10 @@ export interface Campaign {
   nombre: string
   brief: string | null
   que_promociona: string | null
+  objetivo: string | null
+  fecha_inicio: string | null
+  duracion_dias: number | null
+  elementos_especificos: string | null
   estado: 'borrador' | 'activa' | 'finalizada'
   created_at: string
 }
@@ -55,6 +68,20 @@ export interface BaselineMetric {
   likes: number | null
   comentarios: number | null
   guardados: number | null
+  created_at: string
+}
+
+export type AssetTipo = 'imagen' | 'video'
+export type AssetCategoria = 'producto' | 'proceso' | 'otro'
+
+export interface CampaignAsset {
+  id: string
+  campaign_id: string
+  tipo: AssetTipo
+  categoria: AssetCategoria | null
+  url: string
+  nombre_archivo: string | null
+  descripcion: string
   created_at: string
 }
 
