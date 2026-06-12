@@ -4,28 +4,28 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import {
-  Building2,
-  Megaphone,
-  LayoutGrid,
+  Home,
+  Palette,
+  Rocket,
   CalendarDays,
-  Sun,
   BarChart3,
+  Settings,
 } from 'lucide-react'
 
-const NAV = [
-  { href: '/negocio', label: 'Mi Negocio', icon: Building2 },
-  { href: '/campanas', label: 'Campañas', icon: Megaphone },
-  { href: '/borradores', label: 'Borradores', icon: LayoutGrid },
+export const NAV = [
+  { href: '/inicio', label: 'Inicio', icon: Home },
+  { href: '/negocio', label: 'Mi Marca', icon: Palette },
+  { href: '/campanas', label: 'Campañas', icon: Rocket },
   { href: '/calendario', label: 'Calendario', icon: CalendarDays },
-  { href: '/hoy', label: 'Hoy', icon: Sun },
   { href: '/metricas', label: 'Métricas', icon: BarChart3 },
+  { href: '/configuracion', label: 'Configuración', icon: Settings },
 ]
 
 export function SidebarNav() {
   const pathname = usePathname()
 
   return (
-    <nav className="flex flex-col gap-1 px-3">
+    <nav className="flex flex-col gap-0.5 px-3">
       {NAV.map((item) => {
         const active =
           pathname === item.href || pathname.startsWith(item.href + '/')
@@ -35,13 +35,13 @@ export function SidebarNav() {
             key={item.href}
             href={item.href}
             className={cn(
-              'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
+              'flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors',
               active
-                ? 'bg-sidebar-accent text-sidebar-accent-foreground'
-                : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground',
+                ? 'bg-primary font-medium text-primary-foreground'
+                : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
             )}
           >
-            <Icon className="size-4 shrink-0" />
+            <Icon className="size-[18px] shrink-0" />
             {item.label}
           </Link>
         )

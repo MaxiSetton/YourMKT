@@ -5,9 +5,12 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  --font-heading: var(--font-sans);
+  --font-heading: var(--font-bricolage), var(--font-geist-sans), sans-serif;
   --font-sans: var(--font-geist-sans), 'Geist Fallback';
   --font-mono: var(--font-geist-mono), 'Geist Mono Fallback';
+  --color-spark: var(--spark);
+  --color-spark-surface: var(--spark-surface);
+  --color-spark-foreground: var(--spark-foreground);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -49,38 +52,43 @@
 }
 
 :root {
-  --background: oklch(0.99 0.001 286);
-  --foreground: oklch(0.21 0.006 286);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.21 0.006 286);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.21 0.006 286);
-  --primary: oklch(0.55 0.18 256);
-  --primary-foreground: oklch(0.99 0.001 286);
-  --secondary: oklch(0.967 0.003 286);
-  --secondary-foreground: oklch(0.27 0.006 286);
-  --muted: oklch(0.967 0.003 286);
-  --muted-foreground: oklch(0.55 0.01 286);
-  --accent: oklch(0.96 0.02 256);
-  --accent-foreground: oklch(0.4 0.13 256);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.92 0.004 286);
-  --input: oklch(0.92 0.004 286);
-  --ring: oklch(0.55 0.18 256);
-  --chart-1: oklch(0.55 0.18 256);
-  --chart-2: oklch(0.65 0.15 180);
-  --chart-3: oklch(0.7 0.15 70);
-  --chart-4: oklch(0.6 0.18 320);
-  --chart-5: oklch(0.5 0.1 286);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0.002 286);
-  --sidebar-foreground: oklch(0.21 0.006 286);
-  --sidebar-primary: oklch(0.55 0.18 256);
-  --sidebar-primary-foreground: oklch(0.99 0.001 286);
-  --sidebar-accent: oklch(0.96 0.02 256);
-  --sidebar-accent-foreground: oklch(0.4 0.13 256);
-  --sidebar-border: oklch(0.92 0.004 286);
-  --sidebar-ring: oklch(0.55 0.18 256);
+  /* YourMKT — violeta + chispa durazno (light) */
+  --background: #FCFAFF;
+  --foreground: #1E1633;
+  --card: #FFFFFF;
+  --card-foreground: #1E1633;
+  --popover: #FFFFFF;
+  --popover-foreground: #1E1633;
+  --primary: #6D28D9;
+  --primary-foreground: #FFFFFF;
+  --secondary: #F3EFFC;
+  --secondary-foreground: #5B21B6;
+  --muted: #F4F1FA;
+  --muted-foreground: #6F6886;
+  --accent: #F3EFFC;
+  --accent-foreground: #5B21B6;
+  --destructive: #DC2626;
+  --border: #ECE7F5;
+  --input: #E7E0F3;
+  --ring: #6D28D9;
+  /* chispa durazno — uso semántico: "esto te necesita ahora" */
+  --spark: #FDBA74;
+  --spark-surface: #FEF2E5;
+  --spark-foreground: #9A5B23;
+  --chart-1: #6D28D9;
+  --chart-2: #8B5CF6;
+  --chart-3: #FDBA74;
+  --chart-4: #14B8A6;
+  --chart-5: #EC4899;
+  --radius: 0.7rem;
+  --sidebar: #FFFFFF;
+  --sidebar-foreground: #1E1633;
+  --sidebar-primary: #6D28D9;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #F3EFFC;
+  --sidebar-accent-foreground: #6D28D9;
+  --sidebar-border: #F0ECF7;
+  --sidebar-ring: #6D28D9;
 }
 
 .dark {

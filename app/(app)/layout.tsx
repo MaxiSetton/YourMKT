@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { getBusiness } from '@/lib/queries'
 import { SidebarNav } from '@/components/sidebar-nav'
 import { UserMenu } from '@/components/user-menu'
 import { MobileNav } from '@/components/mobile-nav'
@@ -15,17 +16,37 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
     redirect('/auth/login')
   }
 
+  const business = await getBusiness()
+  const marca = business?.nombre ?? 'Tu marca'
+  const inicial = (business?.nombre ?? 'Y').charAt(0).toUpperCase()
+
   return (
     <div className="flex min-h-svh bg-background">
       {/* Sidebar - desktop */}
       <aside className="fixed inset-y-0 left-0 hidden w-60 flex-col border-r border-sidebar-border bg-sidebar py-5 md:flex">
-        <div className="flex items-center gap-2 px-6 pb-6">
-          <div className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <span className="font-mono text-base font-bold">Y</span>
-          </div>
-          <span className="text-lg font-semibold tracking-tight">YourMKT</span>
+        <div className="flex items-center gap-1 px-6 pb-7 pt-1">
+          <span className="font-heading text-lg font-semibold tracking-tight">
+            YourMKT
+          </span>
+          <span
+            className="mt-2 size-1.5 rounded-[2px] bg-spark"
+            aria-hidden="true"
+          />
         </div>
+
         <SidebarNav />
+
+        <div className="mt-auto px-3">
+          <div className="flex items-center gap-2.5 rounded-xl border border-sidebar-border p-2.5">
+            <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-secondary font-heading text-sm font-semibold text-primary">
+              {inicial}
+            </div>
+            <div className="min-w-0 leading-tight">
+              <p className="truncate text-xs font-medium">{marca}</p>
+              <p className="text-[11px] text-muted-foreground">Empresa activa</p>
+            </div>
+          </div>
+        </div>
       </aside>
 
       {/* Main */}

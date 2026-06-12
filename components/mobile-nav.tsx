@@ -11,24 +11,8 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet'
 import { cn } from '@/lib/utils'
-import {
-  Menu,
-  Building2,
-  Megaphone,
-  LayoutGrid,
-  CalendarDays,
-  Sun,
-  BarChart3,
-} from 'lucide-react'
-
-const NAV = [
-  { href: '/negocio', label: 'Mi Negocio', icon: Building2 },
-  { href: '/campanas', label: 'Campañas', icon: Megaphone },
-  { href: '/borradores', label: 'Borradores', icon: LayoutGrid },
-  { href: '/calendario', label: 'Calendario', icon: CalendarDays },
-  { href: '/hoy', label: 'Hoy', icon: Sun },
-  { href: '/metricas', label: 'Métricas', icon: BarChart3 },
-]
+import { Menu } from 'lucide-react'
+import { NAV } from '@/components/sidebar-nav'
 
 export function MobileNav({ email }: { email: string }) {
   const [open, setOpen] = useState(false)
@@ -45,13 +29,16 @@ export function MobileNav({ email }: { email: string }) {
         </SheetTrigger>
         <SheetContent side="left" className="w-64 p-0">
           <SheetTitle className="sr-only">Navegación</SheetTitle>
-          <div className="flex items-center gap-2 px-6 py-5">
-            <div className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-              <span className="font-mono text-base font-bold">Y</span>
-            </div>
-            <span className="text-lg font-semibold tracking-tight">YourMKT</span>
+          <div className="flex items-center gap-1 px-6 py-5">
+            <span className="font-heading text-lg font-semibold tracking-tight">
+              YourMKT
+            </span>
+            <span
+              className="mt-2 size-1.5 rounded-[2px] bg-spark"
+              aria-hidden="true"
+            />
           </div>
-          <nav className="flex flex-col gap-1 px-3">
+          <nav className="flex flex-col gap-0.5 px-3">
             {NAV.map((item) => {
               const active =
                 pathname === item.href || pathname.startsWith(item.href + '/')
@@ -62,13 +49,13 @@ export function MobileNav({ email }: { email: string }) {
                   href={item.href}
                   onClick={() => setOpen(false)}
                   className={cn(
-                    'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
+                    'flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors',
                     active
-                      ? 'bg-accent text-accent-foreground'
-                      : 'text-foreground/70 hover:bg-accent/60',
+                      ? 'bg-primary font-medium text-primary-foreground'
+                      : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
                   )}
                 >
-                  <Icon className="size-4 shrink-0" />
+                  <Icon className="size-[18px] shrink-0" />
                   {item.label}
                 </Link>
               )
