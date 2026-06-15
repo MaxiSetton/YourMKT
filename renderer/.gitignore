@@ -1,8 +1,0 @@
-node_modules/
-out/
-.tools/
-public/*.mp4
-public/*.mp3
-public/*.jpg
-public/*.png
-public/subs.json

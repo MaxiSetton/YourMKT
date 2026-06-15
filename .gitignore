@@ -19,3 +19,9 @@ node_modules
 next-env.d.ts
 *.tsbuildinfo
 package-lock.json
+
+# Pipeline / routines (viven en su propio repo, no en la app)
+renderer/
+ejemplos/
+Proyecto-idea.md
+.claude/skills/reel-director/
