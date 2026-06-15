@@ -15,6 +15,12 @@ export interface Business {
   evitar: string | null
   sitio_web: string | null
   instagram: string | null
+  logo_url: string | null
+  color_primario: string | null
+  color_acento: string | null
+  color_fondo: string | null
+  vibe_tipografico: string | null
+  voz_preferencia: string | null
   created_at: string
 }
 

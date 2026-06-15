@@ -127,8 +127,8 @@ export function MaterialSection({ campaignId, userId, initialAssets }: Props) {
       <CardHeader>
         <CardTitle className="text-base">Material de la campaña</CardTitle>
         <CardDescription>
-          Subí fotos y videos de productos, procesos, etc. La IA los usa para armar los posts.
-          La descripción de qué se ve es obligatoria.
+          Subí poco y lo justo: 📸 1-2 fotos lindas de tu producto estrella (buena luz) y 🎥 un video
+          corto del local o el ambiente. La descripción de qué se ve es obligatoria.
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-5">
@@ -185,6 +185,10 @@ export function MaterialSection({ campaignId, userId, initialAssets }: Props) {
           onSubmit={handleUpload}
           className="flex flex-col gap-4 rounded-md border border-dashed p-4"
         >
+          <p className="rounded-md bg-muted px-3 py-2 text-xs text-muted-foreground">
+            No hace falta que filmes el producto en movimiento — esos clips los generamos con IA.
+            Sumá fotos lindas del producto y un video del ambiente.
+          </p>
           <div className="grid gap-2">
             <Label htmlFor="asset-file">Archivo (imagen o video)</Label>
             <Input

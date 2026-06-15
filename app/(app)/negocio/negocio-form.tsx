@@ -33,6 +33,41 @@ const TONOS = [
   { value: 'premium', label: 'Premium / Exclusivo' },
 ]
 
+const VIBES = [
+  { value: 'clasica', label: 'Clásica / cálida' },
+  { value: 'moderna', label: 'Moderna / limpia' },
+  { value: 'editorial', label: 'Editorial / con carácter' },
+  { value: 'divertida', label: 'Divertida / informal' },
+]
+
+const VOCES = [
+  { value: 'es-AR-ElenaNeural', label: 'Femenina (argentina)' },
+  { value: 'es-AR-TomasNeural', label: 'Masculina (argentina)' },
+]
+
+function ColorField({
+  label,
+  value,
+  onChange,
+}: {
+  label: string
+  value: string
+  onChange: (v: string) => void
+}) {
+  return (
+    <div className="flex flex-col items-center gap-1">
+      <input
+        type="color"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="h-10 w-12 cursor-pointer rounded border bg-transparent p-0.5"
+        aria-label={label}
+      />
+      <span className="text-xs text-muted-foreground">{label}</span>
+    </div>
+  )
+}
+
 interface Props {
   business: Business | null
   userId: string
@@ -52,12 +87,34 @@ export function NegocioForm({ business, userId }: Props) {
   const [evitar, setEvitar] = useState(business?.evitar ?? '')
   const [sitioWeb, setSitioWeb] = useState(business?.sitio_web ?? '')
   const [instagram, setInstagram] = useState(business?.instagram ?? '')
+  const [logoFile, setLogoFile] = useState<File | null>(null)
+  const [logoUrl, setLogoUrl] = useState(business?.logo_url ?? '')
+  const [colorPrimario, setColorPrimario] = useState(business?.color_primario ?? '#7A1F1F')
+  const [colorAcento, setColorAcento] = useState(business?.color_acento ?? '#E8C66A')
+  const [colorFondo, setColorFondo] = useState(business?.color_fondo ?? '#F4E9D8')
+  const [vibe, setVibe] = useState(business?.vibe_tipografico ?? '')
+  const [voz, setVoz] = useState(business?.voz_preferencia ?? '')
   const [isLoading, setIsLoading] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
     const supabase = createClient()
+
+    let nuevoLogoUrl = logoUrl
+    if (logoFile) {
+      const ext = logoFile.name.split('.').pop()
+      const path = `${userId}/brand/logo-${Date.now()}.${ext}`
+      const { error: upErr } = await supabase.storage
+        .from('business-docs')
+        .upload(path, logoFile, { upsert: true })
+      if (upErr) {
+        toast.error('No se pudo subir el logo.')
+        setIsLoading(false)
+        return
+      }
+      nuevoLogoUrl = path
+    }
 
     const payload = {
       nombre,
@@ -72,6 +129,12 @@ export function NegocioForm({ business, userId }: Props) {
       evitar: evitar || null,
       sitio_web: sitioWeb || null,
       instagram: instagram || null,
+      logo_url: nuevoLogoUrl || null,
+      color_primario: colorPrimario || null,
+      color_acento: colorAcento || null,
+      color_fondo: colorFondo || null,
+      vibe_tipografico: vibe || null,
+      voz_preferencia: voz || null,
     }
 
     try {
@@ -87,6 +150,8 @@ export function NegocioForm({ business, userId }: Props) {
           .insert({ user_id: userId, ...payload })
         if (error) throw error
       }
+      setLogoUrl(nuevoLogoUrl)
+      setLogoFile(null)
       toast.success('Negocio guardado correctamente.')
       router.refresh()
     } catch {
@@ -238,6 +303,70 @@ export function NegocioForm({ business, userId }: Props) {
                 value={instagram}
                 onChange={(e) => setInstagram(e.target.value)}
               />
+            </div>
+          </div>
+
+          <div className="border-t pt-5">
+            <h3 className="text-sm font-medium">Identidad visual</h3>
+            <p className="mb-4 text-sm text-muted-foreground">
+              Define cómo se ven los reels: logo, colores, tipografía y voz.
+            </p>
+
+            <div className="mb-4 grid gap-2">
+              <Label htmlFor="logo">Logo (PNG con fondo transparente)</Label>
+              <Input
+                id="logo"
+                type="file"
+                accept="image/png,image/svg+xml,image/*"
+                onChange={(e) => setLogoFile(e.target.files?.[0] ?? null)}
+              />
+              {(logoFile || logoUrl) && (
+                <p className="text-xs text-muted-foreground">
+                  {logoFile ? `Nuevo: ${logoFile.name}` : 'Logo cargado ✓'}
+                </p>
+              )}
+            </div>
+
+            <div className="mb-4 grid gap-2">
+              <Label>Colores de marca</Label>
+              <div className="flex gap-4">
+                <ColorField label="Primario" value={colorPrimario} onChange={setColorPrimario} />
+                <ColorField label="Acento" value={colorAcento} onChange={setColorAcento} />
+                <ColorField label="Fondo" value={colorFondo} onChange={setColorFondo} />
+              </div>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-2">
+                <Label htmlFor="vibe">Estilo tipográfico</Label>
+                <Select value={vibe} onValueChange={setVibe}>
+                  <SelectTrigger id="vibe">
+                    <SelectValue placeholder="Elegí un estilo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {VIBES.map((v) => (
+                      <SelectItem key={v.value} value={v.value}>
+                        {v.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="voz">Voz de los videos</Label>
+                <Select value={voz} onValueChange={setVoz}>
+                  <SelectTrigger id="voz">
+                    <SelectValue placeholder="Elegí una voz" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {VOCES.map((v) => (
+                      <SelectItem key={v.value} value={v.value}>
+                        {v.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
 
