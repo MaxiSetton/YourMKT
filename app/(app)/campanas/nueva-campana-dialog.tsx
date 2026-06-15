@@ -17,6 +17,14 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import type { AudienciaObjetivo, NivelConciencia } from '@/lib/types'
 
 interface Props {
   businessId: string
@@ -33,6 +41,8 @@ export function NuevaCampanaDialog({ businessId, children }: Props) {
   const [duracionDias, setDuracionDias] = useState('7')
   const [elementos, setElementos] = useState('')
   const [brief, setBrief] = useState('')
+  const [audienciaObjetivo, setAudienciaObjetivo] = useState<AudienciaObjetivo | ''>('')
+  const [nivelConciencia, setNivelConciencia] = useState<NivelConciencia | ''>('')
   const [isLoading, setIsLoading] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -52,6 +62,8 @@ export function NuevaCampanaDialog({ businessId, children }: Props) {
           duracion_dias: duracionDias ? Number(duracionDias) : null,
           elementos_especificos: elementos || null,
           brief: brief || null,
+          audiencia_objetivo: audienciaObjetivo || null,
+          nivel_conciencia: nivelConciencia || null,
           estado: 'borrador',
         })
         .select()
@@ -106,6 +118,40 @@ export function NuevaCampanaDialog({ businessId, children }: Props) {
               value={objetivo}
               onChange={(e) => setObjetivo(e.target.value)}
             />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="campana-audiencia">¿A quién le hablás?</Label>
+            <Select
+              value={audienciaObjetivo}
+              onValueChange={(v) => setAudienciaObjetivo(v as AudienciaObjetivo)}
+            >
+              <SelectTrigger id="campana-audiencia">
+                <SelectValue placeholder="Elegí a quién apunta la campaña" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="seguidores">Mis seguidores (ya me conocen)</SelectItem>
+                <SelectItem value="nuevos">Gente nueva (todavía no me conoce)</SelectItem>
+                <SelectItem value="mixta">Mixta</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="campana-conciencia">¿Cuánto sabe del producto?</Label>
+            <Select
+              value={nivelConciencia}
+              onValueChange={(v) => setNivelConciencia(v as NivelConciencia)}
+            >
+              <SelectTrigger id="campana-conciencia">
+                <SelectValue placeholder="Qué tan enterada está esa audiencia" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="no_consciente">No sabe que lo necesita</SelectItem>
+                <SelectItem value="consciente_problema">Conoce el problema, no la solución</SelectItem>
+                <SelectItem value="consciente_solucion">Conoce soluciones, no la mía</SelectItem>
+                <SelectItem value="consciente_producto">Me conoce, no está convencido</SelectItem>
+                <SelectItem value="mas_consciente">Listo para comprar</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="grid gap-2">
