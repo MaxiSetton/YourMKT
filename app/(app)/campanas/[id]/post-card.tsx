@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
@@ -30,6 +30,30 @@ interface Props {
 export function PostCard({ post }: Props) {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
+  const [mediaUrl, setMediaUrl] = useState<string | null>(null)
+
+  // media_url es un path del bucket privado post-media -> hay que firmar la URL para mostrarla.
+  // (si ya viniera una URL http completa, se usa tal cual).
+  useEffect(() => {
+    if (!post.media_url) {
+      setMediaUrl(null)
+      return
+    }
+    if (/^https?:\/\//.test(post.media_url)) {
+      setMediaUrl(post.media_url)
+      return
+    }
+    let active = true
+    createClient()
+      .storage.from('post-media')
+      .createSignedUrl(post.media_url, 3600)
+      .then(({ data }) => {
+        if (active) setMediaUrl(data?.signedUrl ?? null)
+      })
+    return () => {
+      active = false
+    }
+  }, [post.media_url])
 
   const updateEstado = async (estado: Post['estado']) => {
     setIsLoading(true)
@@ -124,14 +148,23 @@ export function PostCard({ post }: Props) {
           <p className="text-sm text-muted-foreground/60 italic">Sin texto todavía.</p>
         )}
       </CardContent>
-      {post.media_url && (
+      {mediaUrl && (
         <CardFooter className="pt-0 pb-3">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={post.media_url}
-            alt="Media del post"
-            className="w-full rounded-md object-cover max-h-40"
-          />
+          {post.media_tipo === 'video' ? (
+            <video
+              src={mediaUrl}
+              controls
+              playsInline
+              className="mx-auto max-h-80 rounded-md bg-black"
+            />
+          ) : (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img
+              src={mediaUrl}
+              alt="Media del post"
+              className="w-full rounded-md object-cover max-h-40"
+            />
+          )}
         </CardFooter>
       )}
     </Card>
