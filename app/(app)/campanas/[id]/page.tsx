@@ -125,9 +125,9 @@ export default async function CampanaDetailPage({
               <h2 className="mb-3 text-sm font-medium text-muted-foreground uppercase tracking-wide">
                 Borradores ({borradores.length})
               </h2>
-              <div className="grid gap-4">
+              <div className="grid gap-3 sm:grid-cols-2">
                 {borradores.map((p) => (
-                  <PostCard key={p.id} post={p} />
+                  <PostCard key={p.id} post={p} assets={assets} />
                 ))}
               </div>
             </section>
@@ -137,9 +137,9 @@ export default async function CampanaDetailPage({
               <h2 className="mb-3 text-sm font-medium text-muted-foreground uppercase tracking-wide">
                 Aprobados ({aprobados.length})
               </h2>
-              <div className="grid gap-4">
+              <div className="grid gap-3 sm:grid-cols-2">
                 {aprobados.map((p) => (
-                  <PostCard key={p.id} post={p} />
+                  <PostCard key={p.id} post={p} assets={assets} />
                 ))}
               </div>
             </section>
@@ -149,9 +149,9 @@ export default async function CampanaDetailPage({
               <h2 className="mb-3 text-sm font-medium text-muted-foreground uppercase tracking-wide">
                 Publicados ({publicados.length})
               </h2>
-              <div className="grid gap-4">
+              <div className="grid gap-3 sm:grid-cols-2">
                 {publicados.map((p) => (
-                  <PostCard key={p.id} post={p} />
+                  <PostCard key={p.id} post={p} assets={assets} />
                 ))}
               </div>
             </section>

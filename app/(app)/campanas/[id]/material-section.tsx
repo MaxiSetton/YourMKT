@@ -24,7 +24,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
-import { ImageIcon, Video, Upload, Trash2, ExternalLink, Sparkles, Camera } from 'lucide-react'
+import { ImageIcon, Video, Upload, Trash2, ExternalLink, Sparkles, Camera, GripVertical } from 'lucide-react'
 
 const BUCKET = 'post-media'
 
@@ -102,6 +102,9 @@ export function MaterialSection({ campaignId, userId, initialAssets }: Props) {
         {cargados.length > 0 && (
           <section className="flex flex-col gap-2">
             <h3 className="text-sm font-medium">Material cargado</h3>
+            <p className="text-xs text-muted-foreground">
+              Arrastrá un archivo a un post para usarlo ahí.
+            </p>
             <div className="flex flex-col gap-2">
               {cargados.map((a) => (
                 <CargadoItem key={a.id} asset={a} />
@@ -190,7 +193,7 @@ function PedidoItem({ asset, campaignId, userId }: { asset: CampaignAsset; campa
   )
 }
 
-// --- Un asset ya cargado: ver / eliminar ---
+// --- Un asset ya cargado: arrastrable, ver, y quitar (deja el hueco como faltante) ---
 function CargadoItem({ asset }: { asset: CampaignAsset }) {
   const router = useRouter()
 
@@ -205,21 +208,34 @@ function CargadoItem({ asset }: { asset: CampaignAsset }) {
     window.open(data.signedUrl, '_blank')
   }
 
-  const handleDelete = async () => {
+  // Quitar = borra el archivo pero deja el slot como FALTANTE (a_pedir) con su descripción,
+  // así no desaparece de los posts que lo usaban y se puede volver a cargar.
+  const quitarArchivo = async () => {
     const supabase = createClient()
     try {
       if (asset.url) await supabase.storage.from(BUCKET).remove([asset.url])
-      const { error } = await supabase.from('campaign_assets').delete().eq('id', asset.id)
+      const { error } = await supabase
+        .from('campaign_assets')
+        .update({ url: null, nombre_archivo: null, origen: 'a_pedir' })
+        .eq('id', asset.id)
       if (error) throw error
-      toast.success('Material eliminado.')
+      toast.success('Archivo quitado — quedó marcado como faltante.')
       router.refresh()
     } catch {
-      toast.error('No se pudo eliminar.')
+      toast.error('No se pudo quitar el archivo.')
     }
   }
 
   return (
-    <div className="flex items-start gap-3 rounded-md border p-3">
+    <div
+      draggable
+      onDragStart={(e) => {
+        e.dataTransfer.setData('text/plain', asset.id)
+        e.dataTransfer.effectAllowed = 'copy'
+      }}
+      className="flex cursor-grab items-start gap-2 rounded-md border p-3 active:cursor-grabbing"
+    >
+      <GripVertical className="mt-0.5 size-4 shrink-0 text-muted-foreground/50" />
       <div className="mt-0.5 text-muted-foreground">
         {asset.tipo === 'video' ? <Video className="size-4" /> : <ImageIcon className="size-4" />}
       </div>
@@ -238,7 +254,14 @@ function CargadoItem({ asset }: { asset: CampaignAsset }) {
         <Button type="button" variant="ghost" size="icon" className="size-8" onClick={handleView}>
           <ExternalLink className="size-4" />
         </Button>
-        <Button type="button" variant="ghost" size="icon" className="size-8 text-destructive" onClick={handleDelete}>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="size-8 text-destructive"
+          title="Quitar archivo (queda como faltante)"
+          onClick={quitarArchivo}
+        >
           <Trash2 className="size-4" />
         </Button>
       </div>
