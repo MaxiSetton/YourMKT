@@ -136,3 +136,14 @@ export const FORMATO_COLOR: Record<PostFormato, string> = {
   story: 'bg-chart-3/15 text-chart-3 border-chart-3/30',
   reel: 'bg-chart-4/15 text-chart-4 border-chart-4/30',
 }
+
+// Rol de la pieza en el arco (etiqueta legible para la UI).
+export const ROL_LABEL: Record<string, string> = {
+  gancho: 'Gancho',
+  deseo: 'Deseo',
+  educacion: 'Educación',
+  prueba: 'Prueba',
+  conversion: 'Conversión',
+  urgencia: 'Urgencia',
+  comunidad: 'Comunidad',
+}
