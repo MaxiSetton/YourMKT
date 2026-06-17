@@ -136,3 +136,11 @@
     @apply font-sans;
   }
 }
+
+/* Carrusel: ocultar la barra de scroll horizontal sin perder el swipe nativo. */
+@utility scrollbar-none {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}

@@ -4,15 +4,10 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
-import type { CampaignAsset, AssetCategoria } from '@/lib/types'
+import type { CampaignAsset, AssetCategoria, Post } from '@/lib/types'
+import { limpiarPedido, postTag } from './helpers'
 import { Button } from '@/components/ui/button'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
@@ -24,7 +19,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
-import { ImageIcon, Video, Upload, Trash2, ExternalLink, Sparkles, Camera, GripVertical } from 'lucide-react'
+import { Camera, ExternalLink, ImageIcon, Sparkles, Trash2, Upload, Video } from 'lucide-react'
 
 const BUCKET = 'post-media'
 
@@ -35,93 +30,146 @@ const CATEGORIA_LABEL: Record<AssetCategoria, string> = {
 }
 
 const sanitize = (name: string) => name.replace(/[^a-zA-Z0-9.\-_]/g, '_')
-// El pedido se guarda con un prefijo interno; al cliente le mostramos el texto limpio.
-const limpiarPedido = (d: string) => d.replace(/^\[A pedir al cliente\]\s*/i, '')
+
+interface PostRef {
+  id: string
+  label: string
+}
 
 interface Props {
   campaignId: string
   userId: string
   initialAssets: CampaignAsset[]
+  posts: Post[]
+  dia: Map<string, number>
 }
 
-export function MaterialSection({ campaignId, userId, initialAssets }: Props) {
-  const cargados = initialAssets.filter((a) => a.url)
+export function MaterialSection({ campaignId, userId, initialAssets, posts, dia }: Props) {
+  // Para cada asset, qué posts lo usan (inverso de posts.asset_ids) → "para qué post es cada archivo".
+  const postsForAsset = (assetId: string): PostRef[] =>
+    posts
+      .filter((p) => p.asset_ids?.includes(assetId))
+      .map((p) => ({ id: p.id, label: postTag(p, dia.get(p.id) ?? 0) }))
+
   const pedidos = initialAssets.filter((a) => !a.url && a.origen === 'a_pedir')
   const aGenerar = initialAssets.filter((a) => !a.url && a.origen === 'a_generar')
+  const cargados = initialAssets.filter((a) => a.url)
 
   return (
-    <Card className="mb-6">
-      <CardHeader>
-        <CardTitle className="text-base">Material de la campaña</CardTitle>
-        <CardDescription>
-          Subí poco y lo justo. Lo que la IA no puede hacer (tus manos, tu cara, tu local real) te lo
-          pedimos abajo — eso es lo que da confianza. La descripción de qué se ve es obligatoria.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-6">
-        {/* 1) Lo que te pedimos — pendiente, con upload propio para cumplir cada pedido */}
-        {pedidos.length > 0 && (
-          <section className="flex flex-col gap-2">
-            <div className="flex items-center gap-2">
-              <Camera className="size-4 text-amber-600" />
-              <h3 className="text-sm font-medium">Te pedimos esto</h3>
-              <Badge variant="outline" className="border-amber-500/40 bg-amber-500/10 text-xs text-amber-700">
+    <div className="flex flex-col gap-4">
+      <p className="text-sm text-muted-foreground">
+        Subí poco y lo justo. Lo que la IA no puede inventar —tus manos, tu cara, tu local real— te lo
+        pedimos abajo: eso es lo que da confianza. Cada archivo dice para qué post es.
+      </p>
+
+      {/* 1) Lo que te pedimos — pendiente */}
+      {pedidos.length > 0 && (
+        <Card className="bg-spark-surface/50 ring-spark/35">
+          <CardHeader className="gap-1">
+            <CardTitle className="flex items-center gap-2 text-base text-spark-foreground">
+              <Camera className="size-4" />
+              Necesitamos que subas esto
+              <Badge className="bg-spark text-spark-foreground">
                 {pedidos.length} pendiente{pedidos.length > 1 ? 's' : ''}
               </Badge>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Clips cortos del celu (~10s) o fotos reales. Subí el archivo en el pedido que corresponda.
-            </p>
-            <div className="flex flex-col gap-2">
-              {pedidos.map((a) => (
-                <PedidoItem key={a.id} asset={a} campaignId={campaignId} userId={userId} />
-              ))}
-            </div>
-          </section>
-        )}
+            </CardTitle>
+            <CardDescription>
+              Clips cortos del celu (~10s, vertical) o fotos reales. Subí el archivo en el pedido que
+              corresponda y listo.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-2.5">
+            {pedidos.map((a) => (
+              <PedidoItem
+                key={a.id}
+                asset={a}
+                campaignId={campaignId}
+                userId={userId}
+                paraPosts={postsForAsset(a.id)}
+              />
+            ))}
+          </CardContent>
+        </Card>
+      )}
 
-        {/* 2) Lo que genera la IA — informativo */}
-        {aGenerar.length > 0 && (
-          <section className="flex flex-col gap-2">
-            <div className="flex items-center gap-2">
-              <Sparkles className="size-4 text-muted-foreground" />
-              <h3 className="text-sm font-medium">Lo genera la IA</h3>
-            </div>
-            <div className="flex flex-col gap-2">
-              {aGenerar.map((a) => (
-                <div key={a.id} className="flex items-start gap-3 rounded-md border border-dashed p-3 text-sm text-muted-foreground">
-                  <Sparkles className="mt-0.5 size-4 shrink-0" />
-                  <span>{a.descripcion}</span>
+      {/* 2) Lo que genera la IA — informativo */}
+      {aGenerar.length > 0 && (
+        <Card>
+          <CardHeader className="gap-1">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Sparkles className="size-4 text-primary" />
+              Lo genera la IA
+            </CardTitle>
+            <CardDescription>No tenés que hacer nada con esto.</CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-2">
+            {aGenerar.map((a) => (
+              <div
+                key={a.id}
+                className="flex flex-col gap-1.5 rounded-lg border border-dashed p-3 text-sm"
+              >
+                <div className="flex items-start gap-2 text-muted-foreground">
+                  <Sparkles className="mt-0.5 size-4 shrink-0 text-primary" />
+                  <span>{limpiarPedido(a.descripcion)}</span>
                 </div>
-              ))}
-            </div>
-          </section>
-        )}
+                <ParaPosts posts={postsForAsset(a.id)} />
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
 
-        {/* 3) Material ya cargado */}
-        {cargados.length > 0 && (
-          <section className="flex flex-col gap-2">
-            <h3 className="text-sm font-medium">Material cargado</h3>
-            <p className="text-xs text-muted-foreground">
-              Arrastrá un archivo a un post para usarlo ahí.
-            </p>
-            <div className="flex flex-col gap-2">
-              {cargados.map((a) => (
-                <CargadoItem key={a.id} asset={a} />
-              ))}
-            </div>
-          </section>
-        )}
+      {/* 3) Material ya cargado */}
+      {cargados.length > 0 && (
+        <Card>
+          <CardHeader className="gap-1">
+            <CardTitle className="text-base">Material cargado</CardTitle>
+            <CardDescription>Lo que ya está subido y se va a usar en los posts.</CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-2.5">
+            {cargados.map((a) => (
+              <CargadoItem key={a.id} asset={a} paraPosts={postsForAsset(a.id)} />
+            ))}
+          </CardContent>
+        </Card>
+      )}
 
-        {/* 4) Sumar material extra (no pedido) */}
-        <NuevoMaterialForm campaignId={campaignId} userId={userId} />
-      </CardContent>
-    </Card>
+      {/* 4) Sumar material extra (no pedido) */}
+      <NuevoMaterialForm campaignId={campaignId} userId={userId} />
+    </div>
+  )
+}
+
+// --- "Para qué post es" ---
+function ParaPosts({ posts }: { posts: PostRef[] }) {
+  if (posts.length === 0) return null
+  return (
+    <div className="flex flex-wrap items-center gap-1.5">
+      <span className="text-[11px] text-muted-foreground">Para:</span>
+      {posts.map((p) => (
+        <span
+          key={p.id}
+          className="rounded-full border border-border bg-background px-2 py-0.5 text-[11px] font-medium"
+        >
+          {p.label}
+        </span>
+      ))}
+    </div>
   )
 }
 
 // --- Un pedido pendiente: descripción + upload que CUMPLE el pedido (rellena ese slot) ---
-function PedidoItem({ asset, campaignId, userId }: { asset: CampaignAsset; campaignId: string; userId: string }) {
+function PedidoItem({
+  asset,
+  campaignId,
+  userId,
+  paraPosts,
+}: {
+  asset: CampaignAsset
+  campaignId: string
+  userId: string
+  paraPosts: PostRef[]
+}) {
   const router = useRouter()
   const [file, setFile] = useState<File | null>(null)
   const [fileKey, setFileKey] = useState(0)
@@ -156,17 +204,17 @@ function PedidoItem({ asset, campaignId, userId }: { asset: CampaignAsset; campa
     }
   }
 
+  const esVideo = asset.tipo === 'video'
+
   return (
-    <div className="flex flex-col gap-3 rounded-md border border-amber-500/30 bg-amber-500/5 p-3">
+    <div className="flex flex-col gap-3 rounded-lg border border-spark/40 bg-background p-3">
       <div className="flex items-start gap-3">
-        <div className="mt-0.5 text-amber-600">
-          {asset.tipo === 'video' ? <Video className="size-4" /> : <ImageIcon className="size-4" />}
+        <div className="mt-0.5 text-spark-foreground">
+          {esVideo ? <Video className="size-4" /> : <Camera className="size-4" />}
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-sm font-medium">
-              {asset.tipo === 'video' ? 'Clip corto' : 'Foto'}
-            </span>
+            <span className="text-sm font-medium">{esVideo ? 'Clip corto' : 'Foto'}</span>
             {asset.categoria && (
               <Badge variant="outline" className="text-xs">
                 {CATEGORIA_LABEL[asset.categoria]}
@@ -174,13 +222,16 @@ function PedidoItem({ asset, campaignId, userId }: { asset: CampaignAsset; campa
             )}
           </div>
           <p className="mt-0.5 text-sm text-muted-foreground">{limpiarPedido(asset.descripcion)}</p>
+          <div className="mt-1.5">
+            <ParaPosts posts={paraPosts} />
+          </div>
         </div>
       </div>
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
         <Input
           key={fileKey}
           type="file"
-          accept="image/*,video/*"
+          accept={esVideo ? 'video/*' : 'image/*'}
           className="text-xs"
           onChange={(e) => setFile(e.target.files?.[0] ?? null)}
         />
@@ -193,8 +244,8 @@ function PedidoItem({ asset, campaignId, userId }: { asset: CampaignAsset; campa
   )
 }
 
-// --- Un asset ya cargado: arrastrable, ver, y quitar (deja el hueco como faltante) ---
-function CargadoItem({ asset }: { asset: CampaignAsset }) {
+// --- Un asset ya cargado: ver y quitar (deja el hueco como faltante) ---
+function CargadoItem({ asset, paraPosts }: { asset: CampaignAsset; paraPosts: PostRef[] }) {
   const router = useRouter()
 
   const handleView = async () => {
@@ -227,15 +278,7 @@ function CargadoItem({ asset }: { asset: CampaignAsset }) {
   }
 
   return (
-    <div
-      draggable
-      onDragStart={(e) => {
-        e.dataTransfer.setData('text/plain', asset.id)
-        e.dataTransfer.effectAllowed = 'copy'
-      }}
-      className="flex cursor-grab items-start gap-2 rounded-md border p-3 active:cursor-grabbing"
-    >
-      <GripVertical className="mt-0.5 size-4 shrink-0 text-muted-foreground/50" />
+    <div className="flex items-start gap-2.5 rounded-lg border p-3">
       <div className="mt-0.5 text-muted-foreground">
         {asset.tipo === 'video' ? <Video className="size-4" /> : <ImageIcon className="size-4" />}
       </div>
@@ -248,18 +291,28 @@ function CargadoItem({ asset }: { asset: CampaignAsset }) {
             </Badge>
           )}
         </div>
-        <p className="mt-0.5 text-sm text-muted-foreground">{asset.descripcion}</p>
+        <p className="mt-0.5 text-sm text-muted-foreground">{limpiarPedido(asset.descripcion)}</p>
+        <div className="mt-1.5">
+          <ParaPosts posts={paraPosts} />
+        </div>
       </div>
       <div className="flex items-center gap-1">
-        <Button type="button" variant="ghost" size="icon" className="size-8" onClick={handleView}>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-sm"
+          onClick={handleView}
+          aria-label="Abrir archivo"
+        >
           <ExternalLink className="size-4" />
         </Button>
         <Button
           type="button"
           variant="ghost"
-          size="icon"
-          className="size-8 text-destructive"
+          size="icon-sm"
+          className="text-destructive"
           title="Quitar archivo (queda como faltante)"
+          aria-label="Quitar archivo"
           onClick={quitarArchivo}
         >
           <Trash2 className="size-4" />
@@ -318,8 +371,11 @@ function NuevoMaterialForm({ campaignId, userId }: { campaignId: string; userId:
   }
 
   return (
-    <form onSubmit={handleUpload} className="flex flex-col gap-4 rounded-md border border-dashed p-4">
-      <p className="text-sm font-medium">Sumar material extra</p>
+    <form onSubmit={handleUpload} className="flex flex-col gap-4 rounded-xl border border-dashed p-4">
+      <div>
+        <p className="text-sm font-medium">Sumar material extra</p>
+        <p className="text-xs text-muted-foreground">¿Tenés algo más para aportar? Subilo acá.</p>
+      </div>
       <div className="grid gap-2">
         <Label htmlFor="asset-file">Archivo (imagen o video)</Label>
         <Input
