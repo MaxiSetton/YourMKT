@@ -8,3 +8,4 @@ alter table public.businesses
   add column if not exists color_fondo text,         -- hex, ej '#F4E9D8'
   add column if not exists vibe_tipografico text,    -- 'clasica' | 'moderna' | 'editorial' | 'divertida'
   add column if not exists voz_preferencia text;     -- 'es-AR-ElenaNeural' | 'es-AR-TomasNeural'
+  

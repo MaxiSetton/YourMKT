@@ -23,6 +23,7 @@ import {
   CartesianGrid,
 } from 'recharts'
 import { BarChart3 } from 'lucide-react'
+import { CargarMetricasDialog } from './cargar-metricas-dialog'
 
 interface Props {
   posts: Post[]
@@ -36,6 +37,7 @@ const chartConfig = {
   likes: { label: 'Likes', color: 'var(--chart-2)' },
   comentarios: { label: 'Comentarios', color: 'var(--chart-3)' },
   guardados: { label: 'Guardados', color: 'var(--chart-4)' },
+  compartidos: { label: 'Compartidos', color: 'var(--chart-5)' },
 }
 
 export function MetricasClient({ posts, metrics, baseline, campaigns }: Props) {
@@ -48,8 +50,9 @@ export function MetricasClient({ posts, metrics, baseline, campaigns }: Props) {
       likes: acc.likes + (m.likes ?? 0),
       comentarios: acc.comentarios + (m.comentarios ?? 0),
       guardados: acc.guardados + (m.guardados ?? 0),
+      compartidos: acc.compartidos + (m.compartidos ?? 0),
     }),
-    { alcance: 0, likes: 0, comentarios: 0, guardados: 0 },
+    { alcance: 0, likes: 0, comentarios: 0, guardados: 0, compartidos: 0 },
   )
 
   const postsWithMetrics = posts.filter((p) => metricByPost[p.id])
@@ -60,6 +63,7 @@ export function MetricasClient({ posts, metrics, baseline, campaigns }: Props) {
       name: p.fecha,
       alcance: metricByPost[p.id]?.alcance ?? 0,
       likes: metricByPost[p.id]?.likes ?? 0,
+      compartidos: metricByPost[p.id]?.compartidos ?? 0,
     }))
     .sort((a, b) => b.alcance - a.alcance)
     .slice(0, 8)
@@ -86,22 +90,27 @@ export function MetricasClient({ posts, metrics, baseline, campaigns }: Props) {
             Las métricas aparecerán aquí una vez que se carguen datos de rendimiento para tus posts.
           </p>
         </div>
+        <div className="mt-2">
+          <CargarMetricasDialog posts={posts} />
+        </div>
       </div>
     )
   }
 
   return (
     <div className="flex flex-col gap-6">
-      {/* KPI cards */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {(
-          [
-            { key: 'alcance', label: 'Alcance total' },
-            { key: 'likes', label: 'Likes totales' },
-            { key: 'comentarios', label: 'Comentarios' },
-            { key: 'guardados', label: 'Guardados' },
-          ] as const
-        ).map(({ key, label }) => (
+      {/* KPI cards y acciones */}
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="grid flex-1 grid-cols-2 gap-3 sm:grid-cols-5">
+          {(
+            [
+              { key: 'alcance', label: 'Alcance total' },
+              { key: 'likes', label: 'Likes totales' },
+              { key: 'comentarios', label: 'Comentarios' },
+              { key: 'guardados', label: 'Guardados' },
+              { key: 'compartidos', label: 'Compartidos' },
+            ] as const
+          ).map(({ key, label }) => (
           <Card key={key}>
             <CardHeader className="pb-1">
               <CardDescription className="text-xs">{label}</CardDescription>
@@ -111,6 +120,10 @@ export function MetricasClient({ posts, metrics, baseline, campaigns }: Props) {
             </CardContent>
           </Card>
         ))}
+        </div>
+        <div className="shrink-0">
+          <CargarMetricasDialog posts={posts} />
+        </div>
       </div>
 
       {/* Bar chart: Posts rendimiento */}
@@ -140,6 +153,7 @@ export function MetricasClient({ posts, metrics, baseline, campaigns }: Props) {
                 <ChartTooltip content={<ChartTooltipContent />} />
                 <Bar dataKey="alcance" fill="var(--color-alcance)" radius={[4, 4, 0, 0]} />
                 <Bar dataKey="likes" fill="var(--color-likes)" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="compartidos" fill="var(--color-compartidos)" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ChartContainer>
           </CardContent>

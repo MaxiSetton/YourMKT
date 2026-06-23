@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
-import type { Post, CampaignAsset } from '@/lib/types'
+import type { Post, PostFormato, CampaignAsset } from '@/lib/types'
 import { FORMATO_LABEL, FORMATO_COLOR, ROL_LABEL } from '@/lib/types'
 import { fechaCorta, limpiarPedido } from './helpers'
 import { Campo } from './field'
@@ -16,7 +16,14 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Camera, Clock, ImageIcon, MoreHorizontal, Sparkles, Trash2, Video } from 'lucide-react'
+import { Camera, Clock, ImageIcon, MoreHorizontal, Music, Sparkles, Trash2, Video } from 'lucide-react'
+
+// Qué se PRODUCE después a partir de la idea, por formato — para que lo que se aprueba sea lo que llega.
+const PRODUCE_HINT: Record<PostFormato, string> = {
+  reel: 'Se produce como Reel: video vertical con voz, subtítulos y música, con tu marca.',
+  feed: 'Se produce como pieza de feed (imagen o carrusel) con tu identidad visual.',
+  story: 'Se produce como Story vertical.',
+}
 
 interface Props {
   post: Post
@@ -142,9 +149,25 @@ export function IdeaCard({ post, dia, assets }: Props) {
         </div>
       )}
 
-      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-        <Clock className="size-3.5" />
-        Pendiente de producción
+      {/* Audio en tendencia: lo que pasa después es que el reel sale SIN música y la canción va en IG */}
+      {post.formato === 'reel' && post.tiene_audio_copyright && (
+        <div className="flex items-start gap-1.5 rounded-lg border border-spark/40 bg-spark-surface px-2.5 py-2 text-[11px] text-spark-foreground">
+          <Music className="mt-0.5 size-3.5 shrink-0" />
+          <span>
+            Audio en tendencia: el reel se exporta <span className="font-medium">sin música</span> y vos agregás
+            {post.nombre_cancion_copyright ? ` “${post.nombre_cancion_copyright}”` : ' el sonido'} en Instagram
+            (las cuentas de empresa no pueden incrustar música con copyright).
+          </span>
+        </div>
+      )}
+
+      {/* Qué se produce después: que la idea aprobada anticipe la pieza real */}
+      <div className="flex items-start gap-1.5 text-xs text-muted-foreground">
+        <Clock className="mt-0.5 size-3.5 shrink-0" />
+        <span>
+          <span className="font-medium text-foreground/70">Pendiente de producción.</span>{' '}
+          {post.formato ? PRODUCE_HINT[post.formato] : ''}
+        </span>
       </div>
     </div>
   )

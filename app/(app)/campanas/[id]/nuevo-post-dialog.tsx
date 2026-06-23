@@ -24,6 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { Checkbox } from '@/components/ui/checkbox'
 import type { PostFormato } from '@/lib/types'
 
 interface Props {
@@ -38,6 +39,8 @@ export function NuevoPostDialog({ campaignId, children }: Props) {
   const [hora, setHora] = useState('')
   const [formato, setFormato] = useState<PostFormato | ''>('')
   const [texto, setTexto] = useState('')
+  const [tieneAudioCopyright, setTieneAudioCopyright] = useState(false)
+  const [nombreCancion, setNombreCancion] = useState('')
   const [isLoading, setIsLoading] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -54,6 +57,8 @@ export function NuevoPostDialog({ campaignId, children }: Props) {
         texto: texto || null,
         estado: 'borrador',
         version: 1,
+        tiene_audio_copyright: tieneAudioCopyright,
+        nombre_cancion_copyright: tieneAudioCopyright ? nombreCancion : null,
       })
       if (error) throw error
       toast.success('Post creado.')
@@ -62,6 +67,8 @@ export function NuevoPostDialog({ campaignId, children }: Props) {
       setHora('')
       setFormato('')
       setTexto('')
+      setTieneAudioCopyright(false)
+      setNombreCancion('')
       router.refresh()
     } catch {
       toast.error('No se pudo crear el post.')
@@ -125,6 +132,30 @@ export function NuevoPostDialog({ campaignId, children }: Props) {
               onChange={(e) => setTexto(e.target.value)}
             />
           </div>
+          
+          <div className="flex items-center gap-2 rounded-md border p-3">
+            <Checkbox
+              id="post-audio-copyright"
+              checked={tieneAudioCopyright}
+              onCheckedChange={(c) => setTieneAudioCopyright(c === true)}
+            />
+            <Label htmlFor="post-audio-copyright" className="text-sm font-medium leading-none cursor-pointer">
+              El audio tiene derechos de autor
+            </Label>
+          </div>
+
+          {tieneAudioCopyright && (
+            <div className="grid gap-2 animate-in fade-in zoom-in-95">
+              <Label htmlFor="post-nombre-cancion">Nombre de la canción original</Label>
+              <Input
+                id="post-nombre-cancion"
+                placeholder="Ej. Bruno Mars - Uptown Funk"
+                required
+                value={nombreCancion}
+                onChange={(e) => setNombreCancion(e.target.value)}
+              />
+            </div>
+          )}
         </form>
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)} type="button">

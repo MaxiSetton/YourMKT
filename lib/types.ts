@@ -82,6 +82,8 @@ export interface Post {
   cta: string | null
   asset_ids: string[] | null
   no_repetir: string | null
+  tiene_audio_copyright: boolean | null
+  nombre_cancion_copyright: string | null
   created_at: string
 }
 
@@ -92,6 +94,7 @@ export interface Metric {
   likes: number | null
   comentarios: number | null
   guardados: number | null
+  compartidos: number | null
   cargado_at: string
 }
 
@@ -104,6 +107,7 @@ export interface BaselineMetric {
   likes: number | null
   comentarios: number | null
   guardados: number | null
+  compartidos: number | null
   created_at: string
 }
 

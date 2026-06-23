@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
@@ -11,6 +11,7 @@ import { MediaCarousel } from './media-carousel'
 import { Campo } from './field'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import {
   Dialog,
   DialogContent,
@@ -36,6 +37,9 @@ import {
   MoreHorizontal,
   RotateCcw,
   Trash2,
+  AlertCircle,
+  Volume2,
+  VolumeX,
 } from 'lucide-react'
 
 const BUCKET = 'post-media'
@@ -58,6 +62,8 @@ export function ReadyPostCard({ post, dia }: Props) {
   const [paths, setPaths] = useState<string[]>([])
   const [busy, setBusy] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [conMusica, setConMusica] = useState(false)
+  const videoRef = useRef<HTMLVideoElement>(null)
 
   useEffect(() => {
     if (!post.media_url) return
@@ -170,12 +176,38 @@ export function ReadyPostCard({ post, dia }: Props) {
       {/* Media — lo que se publica */}
       <div className="shrink-0 bg-muted md:w-[280px]">
         {video ? (
-          <video
-            src={video}
-            controls
-            playsInline
-            className="aspect-[4/5] w-full bg-black object-contain md:aspect-auto md:h-full"
-          />
+          <div className="relative aspect-[4/5] md:aspect-auto md:h-full w-full bg-black">
+            <video
+              ref={videoRef}
+              src={video}
+              controls
+              playsInline
+              muted={!conMusica && post.tiene_audio_copyright === true}
+              className="h-full w-full object-contain"
+            />
+            {post.tiene_audio_copyright && (
+              <div className="absolute top-2 right-2 z-10 flex gap-2">
+                <Button 
+                  size="sm" 
+                  variant="secondary" 
+                  className="h-8 shadow-sm backdrop-blur-md bg-background/80"
+                  onClick={() => setConMusica(!conMusica)}
+                >
+                  {conMusica ? (
+                    <>
+                      <VolumeX className="mr-2 size-3.5" />
+                      Escuchar sin música
+                    </>
+                  ) : (
+                    <>
+                      <Volume2 className="mr-2 size-3.5" />
+                      Escuchar con música
+                    </>
+                  )}
+                </Button>
+              </div>
+            )}
+          </div>
         ) : slides.length > 0 ? (
           <MediaCarousel slides={slides} />
         ) : (
@@ -259,6 +291,17 @@ export function ReadyPostCard({ post, dia }: Props) {
             <p className="text-sm text-muted-foreground">Sin texto todavía.</p>
           )}
         </div>
+
+        {/* Aviso de copyright si corresponde */}
+        {post.tiene_audio_copyright && post.nombre_cancion_copyright && (
+          <Alert className="bg-yellow-500/10 text-yellow-600 dark:text-yellow-500 border-yellow-500/20 py-2.5">
+            <AlertCircle className="size-4" color="currentColor" />
+            <AlertTitle className="text-sm font-semibold">Audio con derechos de autor</AlertTitle>
+            <AlertDescription className="text-xs leading-relaxed mt-1">
+              La descarga del video es sin música. Debés agregar la canción <strong>{post.nombre_cancion_copyright}</strong> manualmente en la red social al momento de publicar.
+            </AlertDescription>
+          </Alert>
+        )}
 
         {/* Acciones principales: copiar (arriba) + descargar + aprobar/publicar */}
         <div className="flex flex-wrap items-center gap-2">
