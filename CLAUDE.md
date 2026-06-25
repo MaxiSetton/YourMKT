@@ -71,3 +71,23 @@ posts: `copy→texto`, `mejor_horario→hora`, `idea_visual→prompt_media`, `me
   recommended — infra/DB/logic via git (Claude), visual tweaks in v0 **after a Pull**.
 - Verify build before pushing (`ignoreBuildErrors` is on, so `tsc` noise from `@base-ui` is
   expected/pre-existing — confirm via `next build`, and eyeball your own types).
+
+## Orquestación de routines (web → n8n → routines)
+**n8n llama a las routines.** La web solo tiene los botones que mandan el evento a n8n. Detalle y JSONs
+importables en **`n8n/`** (`n8n/README.md`).
+- **Flujo:** rutas de `app/api/<acción>` (las llama el browser, RLS) resuelven negocio/campaña/día,
+  setean `gen_status` y disparan un webhook de n8n (`fireN8n` en `lib/routines.ts`) con esos datos +
+  email (nada secreto). n8n firea la routine (credencial Header Auth con el token), pollea Supabase
+  (credencial Supabase) hasta el cambio esperado, escribe `gen_status` y manda el mail (Gmail).
+- **Cómo detecta n8n el fin** (sin tocar el renderer): R1 → aparecen `posts`; R2-todas → ningún `spec`
+  null; R2-un-día → sube `posts.version`; R3 → `media_url` + archivo fresco en Storage.
+- **Disparos:** crear campaña → `idear-campana` (R1 → R2 todas). "Regenerar idea" → `regenerar-idea`
+  (R2 un día, observaciones, sin mail). "Generar/Regenerar pieza" → `producir-post` (R3, con mail). El
+  barrido 5am lo dispara **claude.ai** (Horario de R3); n8n solo avisa 6am (`aviso-diario`, que llama al
+  RPC `resumen_diario()` de Supabase y saca el mail de `auth.users`).
+- **Estado en la web:** `campaigns.gen_status` ('ideando'|'error') y `posts.gen_status`
+  ('ideando'|'produciendo'|'error'). La página de la campaña pollea (refresh c/5s) mientras algo corre.
+  Migración: `db/routines-orquestacion.sql` (`gen_status` + `spec` + RPC `resumen_diario`).
+- **Secretos:** los `ROUTINE_*_TOKEN` y la service-role key van en **Credentials de n8n**, NO en la web.
+  La web solo lee `N8N_WEBHOOK_BASE` (+ `N8N_WEBHOOK_SECRET` opcional). n8n no llama de vuelta a la web,
+  así que esto anda también en local (n8n pega a Supabase/claude.ai, ambos públicos).

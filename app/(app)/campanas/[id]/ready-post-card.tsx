@@ -7,6 +7,8 @@ import { toast } from 'sonner'
 import type { Post } from '@/lib/types'
 import { FORMATO_LABEL, FORMATO_COLOR, ROL_LABEL } from '@/lib/types'
 import { isHttp, dirOf, slideNum, baseName, fechaCorta } from './helpers'
+import { postGen } from './gen'
+import { RegenDialog } from './regen-dialog'
 import { MediaCarousel } from './media-carousel'
 import { Campo } from './field'
 import { Badge } from '@/components/ui/badge'
@@ -34,7 +36,9 @@ import {
   Download,
   Globe,
   Lightbulb,
+  Loader2,
   MoreHorizontal,
+  RefreshCw,
   RotateCcw,
   Trash2,
   AlertCircle,
@@ -126,6 +130,19 @@ export function ReadyPostCard({ post, dia }: Props) {
       router.refresh()
     }
     setBusy(false)
+  }
+
+  const producing = post.gen_status === 'produciendo'
+
+  const regenerarPieza = async (observaciones: string) => {
+    try {
+      await postGen(`/api/posts/${post.id}/producir`, { observaciones })
+      toast.success('Regenerando la pieza. Te avisamos por mail cuando esté lista.')
+      router.refresh()
+    } catch (e) {
+      toast.error((e as Error).message)
+      throw e
+    }
   }
 
   const copyTexto = async () => {
@@ -234,6 +251,12 @@ export function ReadyPostCard({ post, dia }: Props) {
           </span>
 
           <div className="ml-auto flex items-center gap-1.5">
+            {producing && (
+              <span className="inline-flex h-6 items-center gap-1 rounded-full border border-primary/30 bg-primary/5 px-2 text-xs font-medium text-primary">
+                <Loader2 className="size-3 animate-spin" />
+                Regenerando
+              </span>
+            )}
             <span className={`inline-flex h-6 items-center rounded-full border px-2 text-xs font-medium ${estado.cls}`}>
               {estado.label}
             </span>
@@ -309,6 +332,20 @@ export function ReadyPostCard({ post, dia }: Props) {
             <Download className="size-4" />
             {descargaLabel}
           </Button>
+
+          <RegenDialog
+            trigger={
+              <Button size="sm" variant="outline" className="gap-2" disabled={busy || producing}>
+                <RefreshCw className="size-4" />
+                Regenerar pieza
+              </Button>
+            }
+            title="Regenerar la pieza"
+            description="Vuelve a generar la pieza gráfica y el copy a partir de la misma idea. No cambia la estrategia."
+            confirmLabel="Regenerar pieza"
+            placeholder="Ej: cambiá la música, otro plano de apertura, bajá el texto en pantalla…"
+            onConfirm={regenerarPieza}
+          />
 
           {post.estado === 'borrador' && (
             <Button size="sm" className="gap-2" onClick={() => updateEstado('aprobado')} disabled={busy}>

@@ -1,5 +1,8 @@
 'use client'
 
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 import type { Campaign, Post, CampaignAsset } from '@/lib/types'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
@@ -7,8 +10,9 @@ import { IdeaCard } from './idea-card'
 import { ReadyPostCard } from './ready-post-card'
 import { MaterialSection } from './material-section'
 import { NuevoPostDialog } from './nuevo-post-dialog'
+import { postGen } from './gen'
 import { sortByFecha, diaMap } from './helpers'
-import { ImageOff, Images, Layers, Lightbulb, Plus } from 'lucide-react'
+import { AlertCircle, ImageOff, Images, Layers, Lightbulb, Loader2, Plus } from 'lucide-react'
 
 interface Props {
   campaign: Campaign
@@ -54,13 +58,62 @@ function EmptyState({
 }
 
 export function CampanaTabs({ campaign, posts, assets, userId }: Props) {
+  const router = useRouter()
+  const [retrying, setRetrying] = useState(false)
   const dia = diaMap(posts)
   const ideas = sortByFecha(posts.filter((p) => !p.media_url))
   const listos = sortByFecha(posts.filter((p) => p.media_url))
   const pendientes = assets.filter((a) => !a.url && a.origen === 'a_pedir').length
 
+  const ideando = campaign.gen_status === 'ideando'
+  const ideacionError = campaign.gen_status === 'error'
+  // Mientras algo se está generando (ideación de campaña o una pieza), refrescamos para ver el avance.
+  const inProgress = ideando || posts.some((p) => p.gen_status === 'ideando' || p.gen_status === 'produciendo')
+
+  useEffect(() => {
+    if (!inProgress) return
+    const t = setInterval(() => router.refresh(), 5000)
+    return () => clearInterval(t)
+  }, [inProgress, router])
+
+  const reintentarIdeacion = async () => {
+    setRetrying(true)
+    try {
+      await postGen(`/api/campanas/${campaign.id}/idear`)
+      toast.success('Reintentando la generación del calendario…')
+      router.refresh()
+    } catch (e) {
+      toast.error((e as Error).message)
+    }
+    setRetrying(false)
+  }
+
   return (
     <Tabs defaultValue={listos.length > 0 ? 'posts' : 'ideas'}>
+      {ideando && (
+        <div className="mb-4 flex items-start gap-2.5 rounded-xl border border-primary/30 bg-primary/5 px-4 py-3 text-sm text-primary">
+          <Loader2 className="mt-0.5 size-4 shrink-0 animate-spin" />
+          <div>
+            <p className="font-medium">Pensando la campaña…</p>
+            <p className="text-primary/80">
+              La IA está armando el calendario y dirigiendo cada pieza. Puede tardar unos minutos. Te
+              avisamos por mail cuando esté listo para revisar.
+            </p>
+          </div>
+        </div>
+      )}
+      {ideacionError && (
+        <div className="mb-4 flex items-start gap-2.5 rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+          <AlertCircle className="mt-0.5 size-4 shrink-0" />
+          <div className="flex-1">
+            <p className="font-medium">No se pudo generar el calendario.</p>
+            <p className="text-destructive/80">Revisá la conexión con n8n y reintentá.</p>
+          </div>
+          <Button size="sm" variant="outline" onClick={reintentarIdeacion} disabled={retrying}>
+            Reintentar
+          </Button>
+        </div>
+      )}
       <TabsList className="w-full">
         <TabsTrigger value="ideas">
           <Lightbulb />

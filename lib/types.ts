@@ -46,6 +46,8 @@ export interface Campaign {
   audiencia_objetivo: AudienciaObjetivo | null
   nivel_conciencia: NivelConciencia | null
   estado: 'borrador' | 'activa' | 'finalizada'
+  // Orquestación de routines: 'ideando' mientras corren R1+R2; 'error' si falló. null = sin generación.
+  gen_status: 'ideando' | 'error' | null
   created_at: string
 }
 
@@ -84,6 +86,8 @@ export interface Post {
   no_repetir: string | null
   tiene_audio_copyright: boolean | null
   nombre_cancion_copyright: string | null
+  // Orquestación de routines: 'ideando' (R2 re-piensa la idea) | 'produciendo' (R3) | 'error'. null = nada en curso.
+  gen_status: 'ideando' | 'produciendo' | 'error' | null
   created_at: string
 }
 

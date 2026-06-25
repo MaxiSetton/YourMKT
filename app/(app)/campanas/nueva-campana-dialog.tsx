@@ -69,7 +69,17 @@ export function NuevaCampanaDialog({ businessId, children }: Props) {
         .select()
         .single()
       if (error) throw error
-      toast.success('Campaña creada.')
+
+      // Dispara la ideación (Routine 1 → Routine 2) en n8n. No bloqueamos la navegación si falla:
+      // la página de la campaña muestra el estado y permite reintentar.
+      const res = await fetch(`/api/campanas/${data.id}/idear`, { method: 'POST' })
+      if (res.ok) {
+        toast.success('Campaña creada. La IA está pensando el calendario.')
+      } else {
+        const j = (await res.json().catch(() => ({}))) as { error?: string }
+        toast.error(j.error || 'Campaña creada, pero no se pudo iniciar la generación.')
+      }
+
       setOpen(false)
       router.push(`/campanas/${data.id}`)
       router.refresh()
@@ -155,10 +165,11 @@ export function NuevaCampanaDialog({ businessId, children }: Props) {
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="grid gap-2">
-              <Label htmlFor="campana-fecha">Fecha de inicio</Label>
+              <Label htmlFor="campana-fecha">Fecha de inicio *</Label>
               <Input
                 id="campana-fecha"
                 type="date"
+                required
                 value={fechaInicio}
                 onChange={(e) => setFechaInicio(e.target.value)}
               />
