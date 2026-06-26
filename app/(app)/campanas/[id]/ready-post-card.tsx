@@ -9,6 +9,7 @@ import { FORMATO_LABEL, FORMATO_COLOR, ROL_LABEL } from '@/lib/types'
 import { isHttp, dirOf, slideNum, baseName, fechaCorta } from './helpers'
 import { postGen } from './gen'
 import { RegenDialog } from './regen-dialog'
+import { LoadingCard } from './loading-card'
 import { MediaCarousel } from './media-carousel'
 import { Campo } from './field'
 import { Badge } from '@/components/ui/badge'
@@ -36,7 +37,6 @@ import {
   Download,
   Globe,
   Lightbulb,
-  Loader2,
   MoreHorizontal,
   RefreshCw,
   RotateCcw,
@@ -106,7 +106,9 @@ export function ReadyPostCard({ post, dia }: Props) {
     return () => {
       active = false
     }
-  }, [post.media_url, post.media_tipo])
+    // gen_status en deps: al terminar una regeneración (mismo media_url, archivo nuevo) re-firmamos la
+    // URL para que no quede cacheada la pieza vieja.
+  }, [post.media_url, post.media_tipo, post.gen_status])
 
   const updateEstado = async (estado: Post['estado']) => {
     setBusy(true)
@@ -188,6 +190,11 @@ export function ReadyPostCard({ post, dia }: Props) {
   const descargaLabel =
     post.media_tipo === 'video' ? 'Descargar video' : paths.length > 1 ? `Descargar (${paths.length})` : 'Descargar'
 
+  // Mientras se regenera, ocultamos la pieza vieja y mostramos la pantalla de carga.
+  if (producing) {
+    return <LoadingCard dia={dia} title="Regenerando la pieza" />
+  }
+
   return (
     <div className="flex flex-col overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10 md:flex-row">
       {/* Media — lo que se publica */}
@@ -251,12 +258,6 @@ export function ReadyPostCard({ post, dia }: Props) {
           </span>
 
           <div className="ml-auto flex items-center gap-1.5">
-            {producing && (
-              <span className="inline-flex h-6 items-center gap-1 rounded-full border border-primary/30 bg-primary/5 px-2 text-xs font-medium text-primary">
-                <Loader2 className="size-3 animate-spin" />
-                Regenerando
-              </span>
-            )}
             <span className={`inline-flex h-6 items-center rounded-full border px-2 text-xs font-medium ${estado.cls}`}>
               {estado.label}
             </span>

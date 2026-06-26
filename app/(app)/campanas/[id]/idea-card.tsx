@@ -9,6 +9,7 @@ import { FORMATO_LABEL, FORMATO_COLOR, ROL_LABEL } from '@/lib/types'
 import { fechaCorta, limpiarPedido } from './helpers'
 import { postGen } from './gen'
 import { RegenDialog } from './regen-dialog'
+import { LoadingCard } from './loading-card'
 import { Campo } from './field'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -18,7 +19,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Camera, Clock, ImageIcon, Loader2, MoreHorizontal, Music, RefreshCw, Sparkles, Trash2, Video } from 'lucide-react'
+import { Camera, Clock, ImageIcon, MoreHorizontal, Music, RefreshCw, Sparkles, Trash2, Video } from 'lucide-react'
 
 // Qué se PRODUCE después a partir de la idea, por formato — para que lo que se aprueba sea lo que llega.
 const PRODUCE_HINT: Record<PostFormato, string> = {
@@ -78,6 +79,11 @@ export function IdeaCard({ post, dia, assets }: Props) {
       toast.error((e as Error).message)
       throw e
     }
+  }
+
+  // Mientras se (re)genera, ocultamos la idea y mostramos la pantalla de carga.
+  if (inProgress) {
+    return <LoadingCard dia={dia} title={producing ? 'Generando la pieza' : 'Repensando la idea'} />
   }
 
   return (
@@ -191,40 +197,29 @@ export function IdeaCard({ post, dia, assets }: Props) {
       )}
 
       {/* Acciones de generación: producir la pieza o re-pensar la idea */}
-      {inProgress ? (
-        <div className="flex items-center gap-2 rounded-lg border border-primary/30 bg-primary/5 px-3 py-2 text-xs font-medium text-primary">
-          <Loader2 className="size-3.5 shrink-0 animate-spin" />
-          {producing
-            ? 'Produciendo la pieza… te avisamos por mail cuando esté lista.'
-            : 'Volviendo a pensar la idea…'}
-        </div>
-      ) : (
-        <>
-          <div className="flex flex-wrap items-center gap-2 border-t border-border/60 pt-3">
-            <Button size="sm" className="gap-2" onClick={generarPieza} disabled={busy}>
-              <Sparkles className="size-4" />
-              Generar pieza
+      <div className="flex flex-wrap items-center gap-2 border-t border-border/60 pt-3">
+        <Button size="sm" className="gap-2" onClick={generarPieza} disabled={busy}>
+          <Sparkles className="size-4" />
+          Generar pieza
+        </Button>
+        <RegenDialog
+          trigger={
+            <Button size="sm" variant="outline" className="gap-2" disabled={busy}>
+              <RefreshCw className="size-4" />
+              Regenerar idea
             </Button>
-            <RegenDialog
-              trigger={
-                <Button size="sm" variant="outline" className="gap-2" disabled={busy}>
-                  <RefreshCw className="size-4" />
-                  Regenerar idea
-                </Button>
-              }
-              title="Regenerar la idea"
-              description="Vuelve a pensar esta pieza (hook, ángulo, copy). No genera la pieza gráfica."
-              confirmLabel="Regenerar idea"
-              placeholder="Ej: que el hook sea más directo, cambiá el ángulo a testimonio…"
-              onConfirm={regenerarIdea}
-            />
-          </div>
-          <div className="flex items-start gap-1.5 text-xs text-muted-foreground">
-            <Clock className="mt-0.5 size-3.5 shrink-0" />
-            <span>{post.formato ? PRODUCE_HINT[post.formato] : ''}</span>
-          </div>
-        </>
-      )}
+          }
+          title="Regenerar la idea"
+          description="Vuelve a pensar esta pieza (hook, ángulo, copy). No genera la pieza gráfica."
+          confirmLabel="Regenerar idea"
+          placeholder="Ej: que el hook sea más directo, cambiá el ángulo a testimonio…"
+          onConfirm={regenerarIdea}
+        />
+      </div>
+      <div className="flex items-start gap-1.5 text-xs text-muted-foreground">
+        <Clock className="mt-0.5 size-3.5 shrink-0" />
+        <span>{post.formato ? PRODUCE_HINT[post.formato] : ''}</span>
+      </div>
     </div>
   )
 }
