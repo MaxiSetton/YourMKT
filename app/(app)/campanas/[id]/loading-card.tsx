@@ -2,18 +2,51 @@
 
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { Loader2, X } from 'lucide-react'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog'
+import { Eye, Loader2, X } from 'lucide-react'
 
 interface Props {
   dia: number
   // Qué se está haciendo, ej: "Regenerando la pieza".
   title: string
+  // La versión anterior (idea o pieza), para verla en un pop-up mientras se genera la nueva.
+  preview?: React.ReactNode
 }
 
 // Pantalla de carga que reemplaza a la card mientras se (re)genera. Se puede "salir": se minimiza a un
 // chip y sigue en segundo plano (n8n avisa por mail al terminar). Cuando termina, la card muestra lo nuevo.
-export function LoadingCard({ dia, title }: Props) {
+// Mientras tanto, "Ver anterior" abre un pop-up con la versión vieja (marcada como en regeneración).
+export function LoadingCard({ dia, title, preview }: Props) {
   const [minimized, setMinimized] = useState(false)
+
+  const verAnterior = preview ? (
+    <Dialog>
+      <DialogTrigger render={<Button variant="outline" size="sm" className="gap-2" />}>
+        <Eye className="size-4" />
+        Ver anterior
+      </DialogTrigger>
+      <DialogContent className="max-h-[85vh] max-w-md overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 text-base">
+            <Loader2 className="size-4 shrink-0 animate-spin text-primary" />
+            {title}…
+          </DialogTitle>
+        </DialogHeader>
+        <div className="flex items-start gap-2 rounded-lg border border-primary/30 bg-primary/5 px-3 py-2 text-xs text-primary">
+          <span>
+            Esta es la versión anterior. Se está generando una nueva — cuando esté lista, reemplaza a esta.
+          </span>
+        </div>
+        <div className="opacity-80">{preview}</div>
+      </DialogContent>
+    </Dialog>
+  ) : null
 
   if (minimized) {
     return (
@@ -52,6 +85,7 @@ export function LoadingCard({ dia, title }: Props) {
           Te avisamos por mail cuando esté listo. Podés salir y seguir trabajando.
         </p>
       </div>
+      {verAnterior}
     </div>
   )
 }

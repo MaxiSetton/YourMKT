@@ -51,7 +51,7 @@ export interface Campaign {
   created_at: string
 }
 
-export type PostFormato = 'feed' | 'story' | 'reel'
+export type PostFormato = 'feed' | 'story' | 'reel' | 'carrusel'
 
 // Rol de la pieza dentro del arco de la campaña (objetivo propio de cada post).
 export type PostRol =
@@ -137,12 +137,14 @@ export const FORMATO_LABEL: Record<PostFormato, string> = {
   feed: 'Feed',
   story: 'Story',
   reel: 'Reel',
+  carrusel: 'Carrusel',
 }
 
 export const FORMATO_COLOR: Record<PostFormato, string> = {
   feed: 'bg-chart-1/15 text-chart-1 border-chart-1/30',
   story: 'bg-chart-3/15 text-chart-3 border-chart-3/30',
   reel: 'bg-chart-4/15 text-chart-4 border-chart-4/30',
+  carrusel: 'bg-chart-2/15 text-chart-2 border-chart-2/30',
 }
 
 // Rol de la pieza en el arco (etiqueta legible para la UI).

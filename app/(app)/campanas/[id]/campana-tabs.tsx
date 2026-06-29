@@ -88,20 +88,28 @@ export function CampanaTabs({ campaign, posts, assets, userId }: Props) {
     setRetrying(false)
   }
 
+  // Mientras se idea la campaña (R1 + R2) ocultamos todo y mostramos una pantalla de carga prominente.
+  // `retrying` la muestra apenas se reintenta, sin esperar el round-trip.
+  if (ideando || retrying) {
+    return (
+      <div className="relative flex flex-col items-center gap-3 rounded-xl border border-primary/30 bg-primary/5 px-6 py-16 text-center ring-1 ring-foreground/5">
+        <span className="inline-flex h-6 items-center rounded-full bg-primary/10 px-2.5 font-mono text-xs font-semibold uppercase tracking-wider text-primary">
+          {campaign.nombre}
+        </span>
+        <Loader2 className="size-8 animate-spin text-primary" />
+        <div>
+          <p className="font-medium text-primary">Pensando la campaña…</p>
+          <p className="mx-auto mt-1 max-w-sm text-sm text-primary/80">
+            La IA está armando el calendario y dirigiendo cada pieza. Puede tardar unos minutos. Te
+            avisamos por mail cuando esté listo — podés cerrar y seguir trabajando.
+          </p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <Tabs defaultValue={listos.length > 0 ? 'posts' : 'ideas'}>
-      {ideando && (
-        <div className="mb-4 flex items-start gap-2.5 rounded-xl border border-primary/30 bg-primary/5 px-4 py-3 text-sm text-primary">
-          <Loader2 className="mt-0.5 size-4 shrink-0 animate-spin" />
-          <div>
-            <p className="font-medium">Pensando la campaña…</p>
-            <p className="text-primary/80">
-              La IA está armando el calendario y dirigiendo cada pieza. Puede tardar unos minutos. Te
-              avisamos por mail cuando esté listo para revisar.
-            </p>
-          </div>
-        </div>
-      )}
       {ideacionError && (
         <div className="mb-4 flex items-start gap-2.5 rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
           <AlertCircle className="mt-0.5 size-4 shrink-0" />

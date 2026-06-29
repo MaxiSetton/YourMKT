@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
@@ -24,7 +24,8 @@ import { Camera, Clock, ImageIcon, MoreHorizontal, Music, RefreshCw, Sparkles, T
 // Qué se PRODUCE después a partir de la idea, por formato — para que lo que se aprueba sea lo que llega.
 const PRODUCE_HINT: Record<PostFormato, string> = {
   reel: 'Se produce como Reel: video vertical con voz, subtítulos y música, con tu marca.',
-  feed: 'Se produce como pieza de feed (imagen o carrusel) con tu identidad visual.',
+  feed: 'Se produce como pieza de feed (imagen) con tu identidad visual.',
+  carrusel: 'Se produce como carrusel (varias imágenes) con tu identidad visual.',
   story: 'Se produce como Story vertical.',
 }
 
@@ -37,13 +38,19 @@ interface Props {
 export function IdeaCard({ post, dia, assets }: Props) {
   const router = useRouter()
   const [busy, setBusy] = useState(false)
+  // Optimista: muestra la pantalla de carga apenas se dispara n8n, sin esperar el round-trip.
+  // Se suelta cuando llegan props nuevas del server (refresh) y manda gen_status.
+  const [optimistic, setOptimistic] = useState<'produciendo' | 'ideando' | null>(null)
+  useEffect(() => {
+    setOptimistic(null)
+  }, [post.gen_status, post.version, post.media_url])
 
   const needed = (post.asset_ids ?? [])
     .map((id) => assets.find((a) => a.id === id))
     .filter((a): a is CampaignAsset => Boolean(a))
 
-  const producing = post.gen_status === 'produciendo'
-  const reideating = post.gen_status === 'ideando'
+  const producing = post.gen_status === 'produciendo' || optimistic === 'produciendo'
+  const reideating = post.gen_status === 'ideando' || optimistic === 'ideando'
   const inProgress = producing || reideating
 
   const handleDelete = async () => {
@@ -60,30 +67,65 @@ export function IdeaCard({ post, dia, assets }: Props) {
 
   const generarPieza = async () => {
     setBusy(true)
+    setOptimistic('produciendo')
     try {
       await postGen(`/api/posts/${post.id}/producir`)
       toast.success('Generando la pieza. Te avisamos por mail cuando esté lista.')
       router.refresh()
     } catch (e) {
+      setOptimistic(null)
       toast.error((e as Error).message)
     }
     setBusy(false)
   }
 
   const regenerarIdea = async (observaciones: string) => {
+    setOptimistic('ideando')
     try {
       await postGen(`/api/posts/${post.id}/regenerar-idea`, { observaciones })
       toast.success('Volviendo a pensar la idea…')
       router.refresh()
     } catch (e) {
+      setOptimistic(null)
       toast.error((e as Error).message)
       throw e
     }
   }
 
-  // Mientras se (re)genera, ocultamos la idea y mostramos la pantalla de carga.
+  // Mientras se (re)genera, ocultamos la idea y mostramos la pantalla de carga. El pop-up "Ver anterior"
+  // muestra la idea actual mientras se genera la nueva versión.
   if (inProgress) {
-    return <LoadingCard dia={dia} title={producing ? 'Generando la pieza' : 'Repensando la idea'} />
+    const ideaAnterior = (
+      <div className="flex flex-col gap-3">
+        {post.hook && <p className="text-sm font-medium leading-snug">“{post.hook}”</p>}
+        {post.angulo && <Campo label="Ángulo">{post.angulo}</Campo>}
+        {(post.pilar || post.cta) && (
+          <div className="grid gap-3 sm:grid-cols-2">
+            {post.pilar && <Campo label="Pilar">{post.pilar}</Campo>}
+            {post.cta && <Campo label="CTA">{post.cta}</Campo>}
+          </div>
+        )}
+        {post.prompt_media && <Campo label="Idea visual">{post.prompt_media}</Campo>}
+        {post.no_repetir && <Campo label="No repetir">{post.no_repetir}</Campo>}
+        {post.texto && (
+          <div>
+            <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+              Borrador del copy
+            </p>
+            <p className="mt-0.5 whitespace-pre-line text-sm leading-relaxed text-muted-foreground">
+              {post.texto}
+            </p>
+          </div>
+        )}
+      </div>
+    )
+    return (
+      <LoadingCard
+        dia={dia}
+        title={producing ? 'Generando la pieza' : 'Repensando la idea'}
+        preview={ideaAnterior}
+      />
+    )
   }
 
   return (

@@ -67,7 +67,13 @@ export function ReadyPostCard({ post, dia }: Props) {
   const [busy, setBusy] = useState(false)
   const [copied, setCopied] = useState(false)
   const [conMusica, setConMusica] = useState(false)
+  // Optimista: muestra la pantalla de carga apenas se dispara n8n. Se suelta al llegar props nuevas.
+  const [optimistic, setOptimistic] = useState(false)
   const videoRef = useRef<HTMLVideoElement>(null)
+
+  useEffect(() => {
+    setOptimistic(false)
+  }, [post.gen_status, post.version, post.media_url])
 
   useEffect(() => {
     if (!post.media_url) return
@@ -134,14 +140,16 @@ export function ReadyPostCard({ post, dia }: Props) {
     setBusy(false)
   }
 
-  const producing = post.gen_status === 'produciendo'
+  const producing = post.gen_status === 'produciendo' || optimistic
 
   const regenerarPieza = async (observaciones: string) => {
+    setOptimistic(true)
     try {
       await postGen(`/api/posts/${post.id}/producir`, { observaciones })
       toast.success('Regenerando la pieza. Te avisamos por mail cuando esté lista.')
       router.refresh()
     } catch (e) {
+      setOptimistic(false)
       toast.error((e as Error).message)
       throw e
     }
@@ -190,9 +198,24 @@ export function ReadyPostCard({ post, dia }: Props) {
   const descargaLabel =
     post.media_tipo === 'video' ? 'Descargar video' : paths.length > 1 ? `Descargar (${paths.length})` : 'Descargar'
 
-  // Mientras se regenera, ocultamos la pieza vieja y mostramos la pantalla de carga.
+  // Mientras se regenera, ocultamos la pieza vieja y mostramos la pantalla de carga. El pop-up
+  // "Ver anterior" muestra la pieza actual (media + texto) mientras se genera la nueva.
   if (producing) {
-    return <LoadingCard dia={dia} title="Regenerando la pieza" />
+    const piezaAnterior = (
+      <div className="flex flex-col gap-3">
+        {video ? (
+          <video src={video} controls playsInline className="w-full rounded-lg bg-black" />
+        ) : slides.length > 0 ? (
+          <MediaCarousel slides={slides} />
+        ) : null}
+        {post.texto && (
+          <p className="whitespace-pre-line rounded-md bg-muted/40 p-3 text-sm leading-relaxed">
+            {post.texto}
+          </p>
+        )}
+      </div>
+    )
+    return <LoadingCard dia={dia} title="Regenerando la pieza" preview={piezaAnterior} />
   }
 
   return (
