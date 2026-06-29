@@ -30,6 +30,7 @@ interface Props {
   metrics: Metric[]
   baseline: BaselineMetric[]
   campaigns: Campaign[]
+  businessId: string | null
 }
 
 const chartConfig = {
@@ -40,7 +41,52 @@ const chartConfig = {
   compartidos: { label: 'Compartidos', color: 'var(--chart-5)' },
 }
 
-export function MetricasClient({ posts, metrics, baseline, campaigns }: Props) {
+const METRICAS = [
+  { key: 'alcance', label: 'Alcance' },
+  { key: 'likes', label: 'Likes' },
+  { key: 'comentarios', label: 'Comentarios' },
+  { key: 'guardados', label: 'Guardados' },
+  { key: 'compartidos', label: 'Compartidos' },
+] as const
+
+type Fila = Record<string, number | null>
+
+function promedio(rows: Fila[], key: string): number | null {
+  const vals = rows.map((r) => r[key]).filter((v): v is number => v != null)
+  if (vals.length === 0) return null
+  return vals.reduce((a, b) => a + b, 0) / vals.length
+}
+
+const fmt = (v: number | null) =>
+  v == null ? '—' : Math.round(v).toLocaleString('es-AR')
+
+function BarraComparacion({
+  label,
+  value,
+  max,
+  esYourmkt,
+}: {
+  label: string
+  value: number | null
+  max: number
+  esYourmkt: boolean
+}) {
+  const pct = value != null && max > 0 ? (value / max) * 100 : 0
+  return (
+    <div className="flex items-center gap-2">
+      <span className="w-20 shrink-0 text-xs text-muted-foreground">{label}</span>
+      <div className="h-4 flex-1 overflow-hidden rounded bg-muted">
+        <div
+          className={`h-full rounded ${esYourmkt ? 'bg-primary' : 'bg-muted-foreground/40'}`}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+      <span className="w-16 shrink-0 text-right text-xs tabular-nums">{fmt(value)}</span>
+    </div>
+  )
+}
+
+export function MetricasClient({ posts, metrics, baseline, businessId }: Props) {
   const metricByPost = Object.fromEntries(metrics.map((m) => [m.post_id, m]))
 
   // Totals
@@ -68,6 +114,33 @@ export function MetricasClient({ posts, metrics, baseline, campaigns }: Props) {
     .sort((a, b) => b.alcance - a.alcance)
     .slice(0, 8)
 
+  // Comparación de promedios: posts anteriores (orgánicos) vs posts de YourMKT
+  const filasYourmkt: Fila[] = metrics.map((m) => ({
+    alcance: m.alcance,
+    likes: m.likes,
+    comentarios: m.comentarios,
+    guardados: m.guardados,
+    compartidos: m.compartidos,
+  }))
+  const filasAnteriores: Fila[] = baseline.map((b) => ({
+    alcance: b.alcance,
+    likes: b.likes,
+    comentarios: b.comentarios,
+    guardados: b.guardados,
+    compartidos: b.compartidos,
+  }))
+  const comparacion = METRICAS.map(({ key, label }) => {
+    const anteriores = promedio(filasAnteriores, key)
+    const yourmkt = promedio(filasYourmkt, key)
+    const lift =
+      anteriores != null && anteriores > 0 && yourmkt != null
+        ? Math.round(((yourmkt - anteriores) / anteriores) * 100)
+        : null
+    return { label, anteriores, yourmkt, max: Math.max(anteriores ?? 0, yourmkt ?? 0), lift }
+  }).filter((r) => r.anteriores != null || r.yourmkt != null)
+
+  const hayComparacion = baseline.length > 0 && comparacion.length > 0
+
   // Line chart data: baseline over time
   const baselineData = baseline
     .filter((b) => b.fecha)
@@ -78,20 +151,20 @@ export function MetricasClient({ posts, metrics, baseline, campaigns }: Props) {
     }))
     .sort((a, b) => a.fecha.localeCompare(b.fecha))
 
-  const hasAnyMetrics = metrics.length > 0
+  const hasAnyData = metrics.length > 0 || baseline.length > 0
 
-  if (!hasAnyMetrics) {
+  if (!hasAnyData) {
     return (
       <div className="flex flex-col items-center gap-3 py-16 text-center">
         <BarChart3 className="size-10 text-muted-foreground/40" />
         <div>
           <p className="font-medium">No hay métricas todavía</p>
           <p className="mt-1 text-sm text-muted-foreground">
-            Las métricas aparecerán aquí una vez que se carguen datos de rendimiento para tus posts.
+            Cargá métricas de tus posts de YourMKT o de posts anteriores para empezar a comparar el rendimiento.
           </p>
         </div>
         <div className="mt-2">
-          <CargarMetricasDialog posts={posts} />
+          <CargarMetricasDialog posts={posts} businessId={businessId} />
         </div>
       </div>
     )
@@ -122,15 +195,55 @@ export function MetricasClient({ posts, metrics, baseline, campaigns }: Props) {
         ))}
         </div>
         <div className="shrink-0">
-          <CargarMetricasDialog posts={posts} />
+          <CargarMetricasDialog posts={posts} businessId={businessId} />
         </div>
       </div>
 
-      {/* Bar chart: Posts rendimiento */}
+      {/* Comparación: anteriores vs YourMKT */}
+      {hayComparacion && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Promedio por post: anteriores vs YourMKT</CardTitle>
+            <CardDescription className="flex flex-wrap items-center gap-x-4 gap-y-1">
+              <span className="inline-flex items-center gap-1.5">
+                <span className="size-2.5 rounded-sm bg-muted-foreground/40" /> Anteriores
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <span className="size-2.5 rounded-sm bg-primary" /> YourMKT
+              </span>
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-4">
+            {comparacion.map((row) => (
+              <div key={row.label} className="flex flex-col gap-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">{row.label}</span>
+                  {row.lift != null && (
+                    <span
+                      className={`text-xs font-medium tabular-nums ${
+                        row.lift >= 0
+                          ? 'text-emerald-600 dark:text-emerald-400'
+                          : 'text-destructive'
+                      }`}
+                    >
+                      {row.lift >= 0 ? '+' : ''}
+                      {row.lift}% vs anteriores
+                    </span>
+                  )}
+                </div>
+                <BarraComparacion label="Anteriores" value={row.anteriores} max={row.max} esYourmkt={false} />
+                <BarraComparacion label="YourMKT" value={row.yourmkt} max={row.max} esYourmkt />
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Bar chart: Posts rendimiento (YourMKT) */}
       {topPosts.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Rendimiento por post</CardTitle>
+            <CardTitle className="text-base">Rendimiento por post (YourMKT)</CardTitle>
             <CardDescription>Alcance y likes de los mejores posts</CardDescription>
           </CardHeader>
           <CardContent>
@@ -164,7 +277,7 @@ export function MetricasClient({ posts, metrics, baseline, campaigns }: Props) {
       {baselineData.length > 1 && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Evolución histórica (baseline)</CardTitle>
+            <CardTitle className="text-base">Evolución histórica (anteriores)</CardTitle>
             <CardDescription>Métricas orgánicas de la cuenta a lo largo del tiempo</CardDescription>
           </CardHeader>
           <CardContent>

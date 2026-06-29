@@ -27,7 +27,13 @@ export default async function MetricasPage() {
           Seguí el rendimiento de tus posts y campañas a lo largo del tiempo.
         </p>
       </div>
-      <MetricasClient posts={posts} metrics={metrics} baseline={baseline} campaigns={campaigns} />
+      <MetricasClient
+        posts={posts}
+        metrics={metrics}
+        baseline={baseline}
+        campaigns={campaigns}
+        businessId={business?.id ?? null}
+      />
     </div>
   )
 }
