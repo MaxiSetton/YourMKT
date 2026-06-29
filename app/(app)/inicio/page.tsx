@@ -147,7 +147,7 @@ export default async function InicioPage() {
           href="/borradores"
           className="mt-3 flex items-center gap-3 rounded-2xl bg-spark-surface p-3.5 transition-opacity hover:opacity-90"
         >
-          <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[#FBD6A8] text-spark-foreground">
+          <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-spark/25 text-spark-foreground">
             <Bell className="size-[18px]" />
           </div>
           <div className="min-w-0 leading-tight">

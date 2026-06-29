@@ -22,30 +22,45 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex min-h-svh bg-background">
-      {/* Sidebar - desktop */}
-      <aside className="fixed inset-y-0 left-0 hidden w-60 flex-col border-r border-sidebar-border bg-sidebar py-5 md:flex">
-        <div className="flex items-center gap-2 px-6 pb-7 pt-1">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo.png" alt="" className="h-7 w-auto" />
-          <span className="font-heading text-lg font-semibold tracking-tight">
+      {/* Sidebar - desktop: el rail "torre de control" — violeta oscuro, glow naranja, grilla técnica */}
+      <aside className="fixed inset-y-0 left-0 hidden w-60 flex-col overflow-hidden border-r border-sidebar-border bg-sidebar bg-[linear-gradient(180deg,#1F1242_0%,#160A2C_100%)] py-5 text-sidebar-foreground md:flex">
+        {/* glow naranja detrás del logo */}
+        <div
+          className="pointer-events-none absolute -left-10 -top-16 size-44 rounded-full bg-spark/25 blur-3xl"
+          aria-hidden="true"
+        />
+        {/* grilla técnica sutil */}
+        <div
+          className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.05)_1px,transparent_0)] [background-size:18px_18px]"
+          aria-hidden="true"
+        />
+
+        <div className="relative z-10 flex items-center gap-2 px-6 pb-7 pt-1">
+          <span className="inline-flex items-center justify-center rounded-lg bg-white p-1 shadow-sm">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo.png" alt="" className="h-5 w-auto" />
+          </span>
+          <span className="font-heading text-lg font-semibold tracking-tight text-white">
             YourMKT
           </span>
           <span
-            className="mt-2 size-1.5 rounded-[2px] bg-spark"
+            className="mt-2 size-1.5 rounded-[2px] bg-spark shadow-[0_0_8px_var(--spark)]"
             aria-hidden="true"
           />
         </div>
 
-        <SidebarNav />
+        <div className="relative z-10">
+          <SidebarNav />
+        </div>
 
-        <div className="mt-auto px-3">
-          <div className="flex items-center gap-2.5 rounded-xl border border-sidebar-border p-2.5">
-            <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-secondary font-heading text-sm font-semibold text-primary">
+        <div className="relative z-10 mt-auto px-3">
+          <div className="flex items-center gap-2.5 rounded-xl border border-sidebar-border bg-white/[0.04] p-2.5">
+            <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-[#A06BF6] font-heading text-sm font-semibold text-white">
               {inicial}
             </div>
             <div className="min-w-0 leading-tight">
-              <p className="truncate text-xs font-medium">{marca}</p>
-              <p className="text-[11px] text-muted-foreground">Empresa activa</p>
+              <p className="truncate text-xs font-medium text-white">{marca}</p>
+              <p className="text-[11px] text-sidebar-foreground/55">Empresa activa</p>
             </div>
           </div>
         </div>
