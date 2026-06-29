@@ -24,7 +24,9 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
     <div className="flex min-h-svh bg-background">
       {/* Sidebar - desktop */}
       <aside className="fixed inset-y-0 left-0 hidden w-60 flex-col border-r border-sidebar-border bg-sidebar py-5 md:flex">
-        <div className="flex items-center gap-1 px-6 pb-7 pt-1">
+        <div className="flex items-center gap-2 px-6 pb-7 pt-1">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.png" alt="" className="h-7 w-auto" />
           <span className="font-heading text-lg font-semibold tracking-tight">
             YourMKT
           </span>

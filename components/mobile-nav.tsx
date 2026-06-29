@@ -29,7 +29,9 @@ export function MobileNav({ email }: { email: string }) {
         </SheetTrigger>
         <SheetContent side="left" className="w-64 p-0">
           <SheetTitle className="sr-only">Navegación</SheetTitle>
-          <div className="flex items-center gap-1 px-6 py-5">
+          <div className="flex items-center gap-2 px-6 py-5">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo.png" alt="" className="h-7 w-auto" />
             <span className="font-heading text-lg font-semibold tracking-tight">
               YourMKT
             </span>
