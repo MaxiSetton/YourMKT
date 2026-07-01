@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
 import type { Business } from '@/lib/types'
@@ -40,10 +40,11 @@ const VIBES = [
   { value: 'divertida', label: 'Divertida / informal' },
 ]
 
-const VOCES = [
-  { value: 'es-AR-ElenaNeural', label: 'Femenina (argentina)' },
-  { value: 'es-AR-TomasNeural', label: 'Masculina (argentina)' },
-]
+const BUSINESS_BUCKET = 'business-docs'
+
+// voz_preferencia guarda el PATH del audio de referencia (voz clonada por OmniVoice).
+// Los valores viejos eran IDs de EdgeTTS ('es-AR-ElenaNeural') sin '/', que ya no se usan.
+const esPathDeAudio = (v: string | null | undefined) => !!v && v.includes('/')
 
 function ColorField({
   label,
@@ -93,8 +94,25 @@ export function NegocioForm({ business, userId }: Props) {
   const [colorAcento, setColorAcento] = useState(business?.color_acento ?? '#E8C66A')
   const [colorFondo, setColorFondo] = useState(business?.color_fondo ?? '#F4E9D8')
   const [vibe, setVibe] = useState(business?.vibe_tipografico ?? '')
-  const [voz, setVoz] = useState(business?.voz_preferencia ?? '')
+  const [vozFile, setVozFile] = useState<File | null>(null)
+  const [vozPath, setVozPath] = useState(
+    esPathDeAudio(business?.voz_preferencia) ? (business!.voz_preferencia as string) : '',
+  )
   const [isLoading, setIsLoading] = useState(false)
+  // Previews firmados (buckets privados): logo y audio de referencia ya cargados.
+  const [logoPreview, setLogoPreview] = useState('')
+  const [vozPreview, setVozPreview] = useState('')
+
+  useEffect(() => {
+    const supabase = createClient()
+    const sign = async (path: string, set: (u: string) => void) => {
+      const { data } = await supabase.storage.from(BUSINESS_BUCKET).createSignedUrl(path, 3600)
+      if (data?.signedUrl) set(data.signedUrl)
+    }
+    if (logoUrl) sign(logoUrl, setLogoPreview)
+    if (vozPath) sign(vozPath, setVozPreview)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -106,7 +124,7 @@ export function NegocioForm({ business, userId }: Props) {
       const ext = logoFile.name.split('.').pop()
       const path = `${userId}/brand/logo-${Date.now()}.${ext}`
       const { error: upErr } = await supabase.storage
-        .from('business-docs')
+        .from(BUSINESS_BUCKET)
         .upload(path, logoFile, { upsert: true })
       if (upErr) {
         toast.error('No se pudo subir el logo.')
@@ -114,6 +132,21 @@ export function NegocioForm({ business, userId }: Props) {
         return
       }
       nuevoLogoUrl = path
+    }
+
+    let nuevoVozPath = vozPath
+    if (vozFile) {
+      const ext = vozFile.name.split('.').pop()?.toLowerCase()
+      const path = `${userId}/brand/voz-ref-${Date.now()}.${ext}`
+      const { error: upErr } = await supabase.storage
+        .from(BUSINESS_BUCKET)
+        .upload(path, vozFile, { upsert: true })
+      if (upErr) {
+        toast.error('No se pudo subir el audio de referencia.')
+        setIsLoading(false)
+        return
+      }
+      nuevoVozPath = path
     }
 
     const payload = {
@@ -134,7 +167,7 @@ export function NegocioForm({ business, userId }: Props) {
       color_acento: colorAcento || null,
       color_fondo: colorFondo || null,
       vibe_tipografico: vibe || null,
-      voz_preferencia: voz || null,
+      voz_preferencia: nuevoVozPath || null,
     }
 
     try {
@@ -152,6 +185,8 @@ export function NegocioForm({ business, userId }: Props) {
       }
       setLogoUrl(nuevoLogoUrl)
       setLogoFile(null)
+      setVozPath(nuevoVozPath)
+      setVozFile(null)
       toast.success('Negocio guardado correctamente.')
       router.refresh()
     } catch {
@@ -314,17 +349,29 @@ export function NegocioForm({ business, userId }: Props) {
 
             <div className="mb-4 grid gap-2">
               <Label htmlFor="logo">Logo (PNG con fondo transparente)</Label>
-              <Input
-                id="logo"
-                type="file"
-                accept="image/png,image/svg+xml,image/*"
-                onChange={(e) => setLogoFile(e.target.files?.[0] ?? null)}
-              />
+              <div className="flex items-center gap-3">
+                {(logoFile || logoPreview) && (
+                  <img
+                    src={logoFile ? URL.createObjectURL(logoFile) : logoPreview}
+                    alt="Logo de la marca"
+                    className="h-14 w-14 shrink-0 rounded-md border bg-[repeating-conic-gradient(#e5e5e5_0_25%,transparent_0_50%)] bg-[length:12px_12px] object-contain p-1"
+                  />
+                )}
+                <Input
+                  id="logo"
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  onChange={(e) => setLogoFile(e.target.files?.[0] ?? null)}
+                />
+              </div>
               {(logoFile || logoUrl) && (
                 <p className="text-xs text-muted-foreground">
                   {logoFile ? `Nuevo: ${logoFile.name}` : 'Logo cargado ✓'}
                 </p>
               )}
+              <p className="text-xs text-muted-foreground">
+                Usá un PNG con fondo transparente para que el sello quede limpio sobre el video.
+              </p>
             </div>
 
             <div className="mb-4 grid gap-2">
@@ -353,21 +400,31 @@ export function NegocioForm({ business, userId }: Props) {
                 </Select>
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="voz">Voz de los videos</Label>
-                <Select value={voz} onValueChange={setVoz}>
-                  <SelectTrigger id="voz">
-                    <SelectValue placeholder="Elegí una voz" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {VOCES.map((v) => (
-                      <SelectItem key={v.value} value={v.value}>
-                        {v.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Label htmlFor="voz">Voz de los videos (audio de referencia)</Label>
+                <Input
+                  id="voz"
+                  type="file"
+                  accept="audio/mpeg,audio/wav,audio/x-wav,.mp3,.wav"
+                  onChange={(e) => setVozFile(e.target.files?.[0] ?? null)}
+                />
+                {(vozFile || vozPath) && (
+                  <p className="text-xs text-muted-foreground">
+                    {vozFile ? `Nuevo: ${vozFile.name}` : 'Audio de referencia cargado ✓'}
+                  </p>
+                )}
+                {(vozFile || vozPreview) && (
+                  <audio
+                    controls
+                    src={vozFile ? URL.createObjectURL(vozFile) : vozPreview}
+                    className="mt-1 h-9 w-full"
+                  />
+                )}
               </div>
             </div>
+            <p className="mt-2 text-xs text-muted-foreground">
+              Subí 15–30s de una voz hablando claro (.mp3 o .wav). La IA la clona para narrar los reels;
+              cuanto más limpia la grabación, mejor la imitación.
+            </p>
           </div>
 
           <div className="flex justify-end">

@@ -7,5 +7,5 @@ alter table public.businesses
   add column if not exists color_acento text,        -- hex, ej '#E8C66A'
   add column if not exists color_fondo text,         -- hex, ej '#F4E9D8'
   add column if not exists vibe_tipografico text,    -- 'clasica' | 'moderna' | 'editorial' | 'divertida'
-  add column if not exists voz_preferencia text;     -- 'es-AR-ElenaNeural' | 'es-AR-TomasNeural'
+  add column if not exists voz_preferencia text;     -- path del audio de referencia de voz en business-docs ({userId}/brand/voz-ref.*): OmniVoice lo clona. (Valores viejos: IDs EdgeTTS 'es-AR-*Neural', ya sin uso.)
   
