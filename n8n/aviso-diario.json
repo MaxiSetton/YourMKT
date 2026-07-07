@@ -1,0 +1,104 @@
+{
+  "name": "aviso-diario",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 6 * * *"
+            }
+          ]
+        }
+      },
+      "id": "n1",
+      "name": "Cron 6am",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://qhjuyxuastyubtlodwym.supabase.co/rest/v1/rpc/resumen_diario",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ {} }}",
+        "options": {}
+      },
+      "id": "n2",
+      "name": "Resumen del dia",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        220,
+        0
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "REEMPLAZAR",
+          "name": "Supabase YourMKT"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.email }}",
+        "subject": "=Tus posts de hoy ya estan listos",
+        "emailType": "text",
+        "message": "=Hola,\n\nLos posts de hoy de {{ $json.business_name }} ya se generaron: {{ $json.produced }} de {{ $json.total }} listos{{ $json.pending > 0 ? (' (' + $json.pending + ' pendientes)') : '' }}. Entra a YourMKT para revisarlos.\n\n- YourMKT",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "n3",
+      "name": "Avisar del dia",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        440,
+        0
+      ],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "REEMPLAZAR",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Cron 6am": {
+      "main": [
+        [
+          {
+            "node": "Resumen del dia",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resumen del dia": {
+      "main": [
+        [
+          {
+            "node": "Avisar del dia",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "active": false
+}
