@@ -5,6 +5,7 @@ import type {
   Post,
   Metric,
   BaselineMetric,
+  CampaignAsset,
 } from '@/lib/types'
 
 export async function getUser() {
@@ -66,6 +67,18 @@ export async function getAllPosts(
     .select('*')
     .in('campaign_id', campaignIds)
     .order('fecha', { ascending: true })
+  return data ?? []
+}
+
+export async function getCampaignAssets(
+  campaignId: string,
+): Promise<CampaignAsset[]> {
+  const supabase = await createClient()
+  const { data } = await supabase
+    .from('campaign_assets')
+    .select('*')
+    .eq('campaign_id', campaignId)
+    .order('created_at', { ascending: false })
   return data ?? []
 }
 

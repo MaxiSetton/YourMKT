@@ -7,9 +7,22 @@ __v0_jsx-dev-runtime.ts
 .vercel/
 
 # Environment variables
-.env*.local
+renderer/.env
+.env*
 
 # Common ignores
 node_modules
 .next/
 .DS_Store
+
+# Build artifacts
+next-env.d.ts
+*.tsbuildinfo
+package-lock.json
+
+# Pipeline / routines (viven en su propio repo, no en la app)
+renderer/
+ejemplos/
+Proyecto-idea.md
+.claude/skills/reel-director/
+.claude/skills/campaign-director/

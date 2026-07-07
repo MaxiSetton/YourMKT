@@ -1,0 +1,698 @@
+{
+  "name": "idear-campana",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "idear-campana",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "n1",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "idear-campana"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const b = $json.body || {};\nreturn [{ json: { ...b, startedAt: Date.now() } }];"
+      },
+      "id": "n2",
+      "name": "Init",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        200,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "__ROUTINE_1_FIRE_URL__",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "anthropic-beta",
+              "value": "experimental-cc-routine-2026-04-01"
+            },
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { text: JSON.stringify({ negocio: $('Init').first().json.negocio, campania: $('Init').first().json.campania, reseed: false }) } }}",
+        "options": {}
+      },
+      "id": "n3",
+      "name": "Fire R1 calendario",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        400,
+        0
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REEMPLAZAR",
+          "name": "Routine 1 token"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resume": "timeInterval",
+        "amount": 30,
+        "unit": "seconds"
+      },
+      "id": "n5",
+      "name": "Wait calendario",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        600,
+        0
+      ],
+      "webhookId": "n4"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ 'https://qhjuyxuastyubtlodwym.supabase.co/rest/v1/posts?campaign_id=eq.' + $('Init').first().json.campaignId + '&select=id' }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true
+            }
+          }
+        }
+      },
+      "id": "n6",
+      "name": "Check calendario",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        800,
+        0
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "REEMPLAZAR",
+          "name": "Supabase YourMKT"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const body = Array.isArray($json.body) ? $json.body : [];\nreturn [{ json: { done: body.length > 0, timedOut: Date.now() - $('Init').first().json.startedAt > 1800000 } }];"
+      },
+      "id": "n7",
+      "name": "Decide calendario",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1000,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "n8",
+              "leftValue": "={{ $json.done }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "n9",
+      "name": "Calendario listo?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1200,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "n10",
+              "leftValue": "={{ $json.timedOut }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "n11",
+      "name": "Calendario timeout?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1200,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "__ROUTINE_2_FIRE_URL__",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "anthropic-beta",
+              "value": "experimental-cc-routine-2026-04-01"
+            },
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { text: JSON.stringify({ negocio: $('Init').first().json.negocio, campania: $('Init').first().json.campania }) } }}",
+        "options": {}
+      },
+      "id": "n12",
+      "name": "Fire R2 direccion",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1420,
+        -120
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REEMPLAZAR",
+          "name": "Routine 2 token"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resume": "timeInterval",
+        "amount": 45,
+        "unit": "seconds"
+      },
+      "id": "n14",
+      "name": "Wait direccion",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1620,
+        -120
+      ],
+      "webhookId": "n13"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ 'https://qhjuyxuastyubtlodwym.supabase.co/rest/v1/posts?campaign_id=eq.' + $('Init').first().json.campaignId + '&spec=is.null&select=id' }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true
+            }
+          }
+        }
+      },
+      "id": "n15",
+      "name": "Check direccion",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1820,
+        -120
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "REEMPLAZAR",
+          "name": "Supabase YourMKT"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const body = Array.isArray($json.body) ? $json.body : [];\nreturn [{ json: { done: body.length === 0, timedOut: Date.now() - $('Init').first().json.startedAt > 2700000 } }];"
+      },
+      "id": "n16",
+      "name": "Decide direccion",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2020,
+        -120
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "n17",
+              "leftValue": "={{ $json.done }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "n18",
+      "name": "Direccion lista?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        2220,
+        -120
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "n19",
+              "leftValue": "={{ $json.timedOut }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "n20",
+      "name": "Direccion timeout?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        2220,
+        120
+      ]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{ 'https://qhjuyxuastyubtlodwym.supabase.co/rest/v1/campaigns?id=eq.' + $('Init').first().json.campaignId }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Prefer",
+              "value": "return=minimal"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { gen_status: null } }}",
+        "options": {}
+      },
+      "id": "n21",
+      "name": "Marcar listo",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2440,
+        -220
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "REEMPLAZAR",
+          "name": "Supabase YourMKT"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{ 'https://qhjuyxuastyubtlodwym.supabase.co/rest/v1/campaigns?id=eq.' + $('Init').first().json.campaignId }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Prefer",
+              "value": "return=minimal"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { gen_status: 'error' } }}",
+        "options": {}
+      },
+      "id": "n22",
+      "name": "Marcar error",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2440,
+        260
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "REEMPLAZAR",
+          "name": "Supabase YourMKT"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Init').first().json.email }}",
+        "subject": "=Tu campana ya esta lista para revisar",
+        "message": "=Hola,\n\nTu campana ya tiene el calendario armado y todas las piezas dirigidas. Entra a YourMKT para revisarlas y generar las piezas.\n\n- YourMKT",
+        "emailType": "text",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "n23",
+      "name": "Avisar listo",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        2660,
+        -220
+      ],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "REEMPLAZAR",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Init').first().json.email }}",
+        "subject": "=No pudimos generar tu campana",
+        "message": "=Hola,\n\nHubo un problema generando tu campana. Entra a YourMKT y proba \"Reintentar\".\n\n- YourMKT",
+        "emailType": "text",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "n24",
+      "name": "Avisar error",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        2660,
+        260
+      ],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "REEMPLAZAR",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Init",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Init": {
+      "main": [
+        [
+          {
+            "node": "Fire R1 calendario",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fire R1 calendario": {
+      "main": [
+        [
+          {
+            "node": "Wait calendario",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait calendario": {
+      "main": [
+        [
+          {
+            "node": "Check calendario",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check calendario": {
+      "main": [
+        [
+          {
+            "node": "Decide calendario",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Decide calendario": {
+      "main": [
+        [
+          {
+            "node": "Calendario listo?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calendario listo?": {
+      "main": [
+        [
+          {
+            "node": "Fire R2 direccion",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Calendario timeout?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calendario timeout?": {
+      "main": [
+        [
+          {
+            "node": "Marcar error",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait calendario",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fire R2 direccion": {
+      "main": [
+        [
+          {
+            "node": "Wait direccion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait direccion": {
+      "main": [
+        [
+          {
+            "node": "Check direccion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check direccion": {
+      "main": [
+        [
+          {
+            "node": "Decide direccion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Decide direccion": {
+      "main": [
+        [
+          {
+            "node": "Direccion lista?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Direccion lista?": {
+      "main": [
+        [
+          {
+            "node": "Marcar listo",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Direccion timeout?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Direccion timeout?": {
+      "main": [
+        [
+          {
+            "node": "Marcar error",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait direccion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Marcar listo": {
+      "main": [
+        [
+          {
+            "node": "Avisar listo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Marcar error": {
+      "main": [
+        [
+          {
+            "node": "Avisar error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "active": false
+}
